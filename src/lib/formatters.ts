@@ -3,7 +3,7 @@
  */
 
 import { getCategoryName } from "./api.js";
-import type { Event, GameStore, RegistrationEntry, StandingEntry } from "./types.js";
+import type { Event, GameStore, RegistrationEntry, RoundMatchEntry, StandingEntry } from "./types.js";
 
 export function formatStore(gameStore: GameStore): string {
   const store = gameStore.store;
@@ -46,27 +46,66 @@ export function formatStore(gameStore: GameStore): string {
   return lines.join("\n");
 }
 
+export function formatMatchEntry(match: RoundMatchEntry, index: number): string {
+  const rels = match.player_match_relationships ?? [];
+  const names = rels
+    .slice()
+    .sort((a, b) => (a.player_order ?? 0) - (b.player_order ?? 0))
+    .map((r) => r.player?.best_identifier ?? "—");
+  const vs = names.length >= 2 ? `${names[0]} vs ${names[1]}` : names[0] ?? "—";
+  const table = match.table_number != null ? `Table ${match.table_number}` : "";
+  const prefix = table ? `${table}: ` : "";
+  if (match.match_is_bye) {
+    return `${prefix}${vs} — Bye`;
+  }
+  if (match.match_is_intentional_draw || match.match_is_unintentional_draw) {
+    return `${prefix}${vs} — Draw`;
+  }
+  if (match.winning_player != null && match.status === "COMPLETE") {
+    const winnerRel = rels.find((r) => r.player?.id === match.winning_player);
+    const winner = winnerRel?.player?.best_identifier ?? `Player ${match.winning_player}`;
+    const score =
+      match.games_won_by_winner != null && match.games_won_by_loser != null
+        ? ` ${match.games_won_by_winner}-${match.games_won_by_loser}`
+        : "";
+    return `${prefix}${vs} — ${winner} wins${score}`;
+  }
+  const status = match.status ?? "—";
+  return `${prefix}${vs} — ${status}`;
+}
+
 export function formatStandingEntry(entry: StandingEntry, index: number): string {
   const rank = entry.rank ?? entry.placement ?? index + 1;
-  const name = entry.player_name ?? entry.display_name ?? entry.username ?? "—";
+  const name =
+    entry.player?.best_identifier ??
+    entry.player_name ??
+    entry.display_name ??
+    entry.username ??
+    "—";
   const lines: string[] = [`${rank}. ${name}`];
-  if (entry.wins !== undefined || entry.losses !== undefined) {
-    lines.push(`   Record: ${entry.wins ?? 0}-${entry.losses ?? 0}`);
+  const record =
+    entry.record ?? entry.match_record ?? (entry.wins !== undefined || entry.losses !== undefined ? `${entry.wins ?? 0}-${entry.losses ?? 0}` : undefined);
+  if (record) {
+    lines.push(`   Record: ${record}`);
   }
   if (entry.match_points !== undefined) {
     lines.push(`   Match points: ${entry.match_points}`);
   }
-  if (entry.opponent_match_win_pct !== undefined) {
-    lines.push(`   OMWP: ${(Number(entry.opponent_match_win_pct) * 100).toFixed(1)}%`);
+  const omwp = entry.opponent_match_win_pct ?? entry.opponent_match_win_percentage;
+  if (omwp !== undefined) {
+    lines.push(`   OMWP: ${(Number(omwp) * 100).toFixed(1)}%`);
   }
-  if (entry.game_win_pct !== undefined) {
-    lines.push(`   GWP: ${(Number(entry.game_win_pct) * 100).toFixed(1)}%`);
+  const gwp = entry.game_win_pct ?? entry.game_win_percentage;
+  if (gwp !== undefined) {
+    lines.push(`   GWP: ${(Number(gwp) * 100).toFixed(1)}%`);
   }
   return lines.join("\n");
 }
 
 export function formatRegistrationEntry(entry: RegistrationEntry, index: number): string {
   const name =
+    entry.best_identifier ??
+    entry.user?.best_identifier ??
     entry.display_name ??
     entry.username ??
     (entry.user &&
@@ -75,15 +114,17 @@ export function formatRegistrationEntry(entry: RegistrationEntry, index: number)
         [entry.user.first_name, entry.user.last_name].filter(Boolean).join(" "))) ??
     "—";
   const lines: string[] = [`${index + 1}. ${name}`];
-  if (entry.status) {
-    lines.push(`   Status: ${entry.status}`);
+  const status = entry.registration_status ?? entry.status;
+  if (status) {
+    lines.push(`   Status: ${status}`);
   }
-  if (entry.registered_at) {
+  const regAt = entry.registration_completed_datetime ?? entry.registered_at;
+  if (regAt) {
     try {
-      const d = new Date(entry.registered_at);
+      const d = new Date(regAt);
       lines.push(`   Registered: ${d.toLocaleString()}`);
     } catch {
-      lines.push(`   Registered: ${entry.registered_at}`);
+      lines.push(`   Registered: ${regAt}`);
     }
   }
   return lines.join("\n");
@@ -155,6 +196,23 @@ export function formatEvent(event: Event): string {
 
   if (event.description) {
     lines.push(`\n${event.description}`);
+  }
+
+  // Include tournament round IDs so callers can use get_tournament_round_standings (e.g. for results/summary).
+  if (event.tournament_phases && event.tournament_phases.length > 0) {
+    const roundParts: string[] = [];
+    for (const phase of event.tournament_phases) {
+      if (phase.rounds && phase.rounds.length > 0) {
+        for (const r of phase.rounds) {
+          const label = phase.phase_name ? `Round ${r.round_number} (${phase.phase_name})` : `Round ${r.round_number}`;
+          roundParts.push(`${label}: ID ${r.id}${r.status ? ` (${r.status})` : ""}`);
+        }
+      }
+    }
+    if (roundParts.length > 0) {
+      lines.push(`\n🏆 Tournament rounds (use get_tournament_round_standings with round ID for standings):`);
+      lines.push(roundParts.join("\n"));
+    }
   }
 
   return lines.join("\n");

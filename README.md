@@ -61,6 +61,10 @@ Cursor limits the **combined server name + tool name** to 60 characters. Use a *
 
 After that, the Lorcana Event Finder tools are available to the AI in Cursor.
 
+**If you see "No matching version found" when Cursor starts the server:** Clear npx’s cache, then reload MCP. In a terminal run: `rm -rf ~/.npm/_npx` (on Windows: `rmdir /s /q %APPDATA%\npm-cache\_npx`), then restart Cursor or reload MCP.
+
+**If you see "command not found" when running npx in a terminal:** Don’t run npx from inside the package directory (same name as the package). npx will use the local project and the bin wrapper can fail. Run from another directory, e.g. `cd ~` then `npx -y unofficial-ravensburger-playhub-mcp`.
+
 ## Using with Claude
 
 Add the server to **Claude Desktop** by editing your MCP config file:
@@ -159,11 +163,15 @@ The server exposes tools that are easy for LLMs to choose and call: descriptions
 | **list_filters** | Before searching events by format or category; returns exact names for the `formats` and `categories` parameters. |
 | **search_events** | When you have latitude/longitude (e.g. from a map or device). |
 | **search_events_by_city** | When the user says a city name (e.g. "events in Seattle" or "Austin, TX"). Geocoded. |
-| **get_event_details** | Full details for one event; use when you have an event ID (e.g. from a search). |
-| **get_event_registrations** | Who is signed up for an event; needs event ID. |
-| **get_tournament_round_standings** | Standings/leaderboard for a tournament round; needs round ID. |
+| **get_event_details** | Full details for one event; use when you have an event ID. For tournaments, the response includes **round IDs**. |
+| **get_event_standings** | **Event results/standings** by event ID. Use for "championship results", "who won", or "standings". The tool finds rounds and returns standings automatically—prefer over get_tournament_round_standings when the user asks for event results. |
+| **get_event_registrations** | Who is signed up for an event (names from API); needs event ID. |
+| **get_tournament_round_standings** | Standings for a specific round when you have a round ID (e.g. from get_event_details). |
+| **get_round_matches** | Pairings and match results for a round; needs round ID (from get_event_details). Use for "who played whom" or match results. |
 | **search_stores** | Stores or venues; optional name search and/or lat/long + radius. |
 | **search_stores_by_city** | Stores near a city name (e.g. "stores in Seattle"). |
+
+**Dates:** When you omit `start_date`, search uses the **start of today (UTC)** so events that already started today are included. For "today's events" pass `start_date: "YYYY-MM-DD"` with today's date (correct year).
 
 ## Development
 

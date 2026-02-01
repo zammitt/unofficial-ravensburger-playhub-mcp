@@ -3,10 +3,11 @@ import assert from "node:assert";
 import {
   formatStore,
   formatEvent,
+  formatMatchEntry,
   formatStandingEntry,
   formatRegistrationEntry,
 } from "../lib/formatters.js";
-import type { GameStore, Event, StandingEntry, RegistrationEntry } from "../lib/types.js";
+import type { GameStore, Event, RoundMatchEntry, StandingEntry, RegistrationEntry } from "../lib/types.js";
 
 describe("formatStore", () => {
   it("formats minimal store with name and id", () => {
@@ -209,6 +210,88 @@ describe("formatEvent", () => {
     const out = formatEvent(event);
     assert.ok(out.includes("Bring your deck!"));
   });
+
+  it("includes tournament round IDs when tournament_phases present", () => {
+    const event: Event = {
+      id: 110,
+      name: "Store Champs",
+      start_datetime: "2025-02-01T18:00:00Z",
+      tournament_phases: [
+        {
+          id: 1,
+          phase_name: "Phase 1",
+          status: "COMPLETE",
+          rounds: [
+            { id: 415064, round_number: 1, status: "COMPLETE" },
+            { id: 415067, round_number: 4, status: "COMPLETE" },
+          ],
+        },
+      ],
+    };
+    const out = formatEvent(event);
+    assert.ok(out.includes("Tournament rounds"));
+    assert.ok(out.includes("get_tournament_round_standings"));
+    assert.ok(out.includes("415064"));
+    assert.ok(out.includes("415067"));
+  });
+});
+
+describe("formatMatchEntry", () => {
+  it("formats completed match with winner and score", () => {
+    const match: RoundMatchEntry = {
+      table_number: 1,
+      status: "COMPLETE",
+      winning_player: 15124,
+      games_won_by_winner: 2,
+      games_won_by_loser: 1,
+      player_match_relationships: [
+        { player_order: 1, player: { id: 6679, best_identifier: "Rachel Z" } },
+        { player_order: 2, player: { id: 15124, best_identifier: "Joseph C" } },
+      ],
+    };
+    const out = formatMatchEntry(match, 0);
+    assert.ok(out.includes("Rachel Z vs Joseph C"));
+    assert.ok(out.includes("Joseph C wins"));
+    assert.ok(out.includes("2-1"));
+  });
+
+  it("formats bye match", () => {
+    const match: RoundMatchEntry = {
+      table_number: 2,
+      match_is_bye: true,
+      player_match_relationships: [
+        { player_order: 1, player: { best_identifier: "Alice" } },
+      ],
+    };
+    const out = formatMatchEntry(match, 0);
+    assert.ok(out.includes("Bye"));
+  });
+
+  it("formats draw", () => {
+    const match: RoundMatchEntry = {
+      match_is_intentional_draw: true,
+      player_match_relationships: [
+        { player_order: 1, player: { best_identifier: "A" } },
+        { player_order: 2, player: { best_identifier: "B" } },
+      ],
+    };
+    const out = formatMatchEntry(match, 0);
+    assert.ok(out.includes("A vs B"));
+    assert.ok(out.includes("Draw"));
+  });
+
+  it("falls back to status when no winner", () => {
+    const match: RoundMatchEntry = {
+      status: "IN_PROGRESS",
+      player_match_relationships: [
+        { player_order: 1, player: { best_identifier: "X" } },
+        { player_order: 2, player: { best_identifier: "Y" } },
+      ],
+    };
+    const out = formatMatchEntry(match, 0);
+    assert.ok(out.includes("X vs Y"));
+    assert.ok(out.includes("IN_PROGRESS"));
+  });
 });
 
 describe("formatStandingEntry", () => {
@@ -216,6 +299,12 @@ describe("formatStandingEntry", () => {
     const entry: StandingEntry = { username: "player1" };
     const out = formatStandingEntry(entry, 0);
     assert.ok(out.includes("1. player1"));
+  });
+
+  it("uses player.best_identifier when present (API shape)", () => {
+    const entry: StandingEntry = { player: { best_identifier: "Corey J" }, rank: 1 };
+    const out = formatStandingEntry(entry, 0);
+    assert.ok(out.includes("1. Corey J"));
   });
 
   it("uses em dash when no name fields", () => {
@@ -229,6 +318,24 @@ describe("formatStandingEntry", () => {
     const out = formatStandingEntry(entry, 0);
     assert.ok(out.includes("Record: 3-0"));
   });
+
+  it("shows record from record/match_record (API shape)", () => {
+    const entry: StandingEntry = { player: { best_identifier: "X" }, record: "3-0-1", match_points: 10 };
+    const out = formatStandingEntry(entry, 0);
+    assert.ok(out.includes("Record: 3-0-1"));
+    assert.ok(out.includes("Match points: 10"));
+  });
+
+  it("shows OMWP/GWP from opponent_match_win_percentage and game_win_percentage", () => {
+    const entry: StandingEntry = {
+      player_name: "Y",
+      opponent_match_win_percentage: 0.645,
+      game_win_percentage: 0.636,
+    };
+    const out = formatStandingEntry(entry, 0);
+    assert.ok(out.includes("OMWP: 64.5%"));
+    assert.ok(out.includes("GWP: 63.6%"));
+  });
 });
 
 describe("formatRegistrationEntry", () => {
@@ -236,6 +343,18 @@ describe("formatRegistrationEntry", () => {
     const entry: RegistrationEntry = {};
     const out = formatRegistrationEntry(entry, 0);
     assert.ok(out.includes("1. —"));
+  });
+
+  it("uses best_identifier when present (API shape)", () => {
+    const entry: RegistrationEntry = { best_identifier: "Corey J", user: { best_identifier: "Corex" } };
+    const out = formatRegistrationEntry(entry, 0);
+    assert.ok(out.includes("1. Corey J"));
+  });
+
+  it("uses user.best_identifier when top-level best_identifier missing", () => {
+    const entry: RegistrationEntry = { user: { best_identifier: "Deviknyte" } };
+    const out = formatRegistrationEntry(entry, 0);
+    assert.ok(out.includes("1. Deviknyte"));
   });
 
   it("uses user.username when display_name missing", () => {

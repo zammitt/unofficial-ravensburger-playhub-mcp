@@ -15,12 +15,16 @@ Use this to choose the right tool. All tools return plain text.
 | **search_events** | You have latitude and longitude (e.g. from a map or device). |
 | **search_events_by_city** | User says a city name, e.g. "events in Seattle" or "Austin, TX". |
 | **get_event_details** | User asks for more info about a specific event; you have an event ID (from search). |
+| **get_event_standings** | User asks for **results, standings, or who won** for an event. Use event ID only; this tool finds rounds and returns standings automatically. Prefer over get_tournament_round_standings for "championship results" or "event results". |
 | **get_event_registrations** | User asks who is signed up or the registration list; you need event ID. |
-| **get_tournament_round_standings** | User asks who is winning or standings for a round; you need round ID. |
+| **get_tournament_round_standings** | Standings for a specific round when you already have a round ID (e.g. from get_event_details). |
+| **get_round_matches** | Pairings and match results for a round; you need round ID (from get_event_details). Use when the user asks who played whom or for match results. |
 | **search_stores** | User asks for stores, venues, or places to play; optional: name (\`search\`) and/or location (lat/long + \`radius_miles\`). |
 | **search_stores_by_city** | User says a city for stores, e.g. "stores in Seattle". |
 
-**Typical flow:** For "events near Seattle" → \`search_events_by_city\` with \`city: "Seattle, WA"\`. For "who's signed up for that event?" → \`get_event_registrations\` with the event ID from the previous search.
+**Dates:** For "today's events", pass \`start_date: "YYYY-MM-DD"\` with **today's date** (correct year) so events that already started today are included. If you omit start_date, results are from the start of today (UTC).
+
+**Typical flow:** For "events near Seattle" → \`search_events_by_city\` with \`city: "Seattle, WA"\`. For "summarize the results of the RIW set championship" → find the event (e.g. search by city + store or text), then \`get_event_standings(event_id)\` to get standings in one call.
 `;
 
 export function registerFilterTools(server: McpServer): void {

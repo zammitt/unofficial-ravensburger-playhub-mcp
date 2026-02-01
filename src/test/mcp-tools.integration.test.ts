@@ -24,6 +24,8 @@ const EXPECTED_TOOL_NAMES = [
   "search_events",
   "get_event_details",
   "get_tournament_round_standings",
+  "get_round_matches",
+  "get_event_standings",
   "get_event_registrations",
   "search_events_by_city",
   "search_stores",
@@ -179,6 +181,26 @@ describe("MCP server integration – all tools and call variations", { timeout: 
     });
     assert.ok(!isError, `get_tournament_round_standings (pagination) should not error: ${text}`);
     assert.ok(typeof text === "string", "should return text");
+  });
+
+  it("get_round_matches – required only", async () => {
+    const { text, isError } = await callTool("get_round_matches", { round_id: 414976 });
+    assert.ok(!isError, `get_round_matches should not error: ${text}`);
+    assert.ok(typeof text === "string", "should return text");
+  });
+
+  it("get_event_standings – event with rounds", async () => {
+    const { text, isError } = await callTool("get_event_standings", {
+      event_id: 362750,
+      page_size: 25,
+    });
+    assert.ok(!isError, `get_event_standings should not error: ${text}`);
+    assert.ok(typeof text === "string", "should return text");
+    // Event 362750 has standings; response should include standings or a clear "no standings" message
+    assert.ok(
+      text.includes("362750") || text.includes("Standings") || text.includes("No standings"),
+      "response should mention event or standings"
+    );
   });
 
   it("get_event_registrations – required only", async () => {

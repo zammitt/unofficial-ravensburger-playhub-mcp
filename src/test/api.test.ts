@@ -11,6 +11,7 @@ import {
   fetchEvents,
   fetchEventDetails,
   fetchEventRegistrations,
+  fetchTournamentRoundMatches,
   fetchTournamentRoundStandings,
   fetchStores,
 } from "../lib/api.js";
@@ -199,6 +200,22 @@ describe("api – fetch with mocked global fetch", () => {
     globalThis.fetch = async (_input: RequestInfo | URL) => new Response("error", { status: 500 });
     await assert.rejects(
       () => fetchTournamentRoundStandings(100),
+      /API request failed/
+    );
+  });
+
+  it("fetchTournamentRoundMatches returns json on ok", async () => {
+    const data = { count: 0, total: 0, results: [], page_size: 25, current_page_number: 1, next_page_number: null, previous_page_number: null };
+    globalThis.fetch = async (_input: RequestInfo | URL) =>
+      new Response(JSON.stringify(data), { status: 200 });
+    const result = await fetchTournamentRoundMatches(100, 1, 25);
+    assert.strictEqual(result.count, 0);
+  });
+
+  it("fetchTournamentRoundMatches throws on non-ok", async () => {
+    globalThis.fetch = async (_input: RequestInfo | URL) => new Response("error", { status: 500 });
+    await assert.rejects(
+      () => fetchTournamentRoundMatches(100),
       /API request failed/
     );
   });

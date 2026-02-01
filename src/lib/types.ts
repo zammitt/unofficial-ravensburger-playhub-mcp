@@ -51,6 +51,24 @@ export interface StoresResponse {
   results: GameStore[];
 }
 
+/** A single tournament round (from event details). */
+export interface TournamentRound {
+  id: number;
+  round_number: number;
+  status?: string;
+  standings_status?: string;
+  [key: string]: unknown;
+}
+
+/** A tournament phase containing rounds (e.g. Swiss, Top Cut). */
+export interface TournamentPhase {
+  id: number;
+  phase_name?: string;
+  status?: string;
+  rounds: TournamentRound[];
+  [key: string]: unknown;
+}
+
 export interface Event {
   id: number;
   name: string;
@@ -78,6 +96,8 @@ export interface Event {
   settings?: {
     event_lifecycle_status?: string;
   };
+  /** Tournament phases and rounds (when event has rounds). Use round IDs with get_tournament_round_standings. */
+  tournament_phases?: TournamentPhase[];
 }
 
 export interface EventsResponse {
@@ -94,14 +114,21 @@ export interface EventsResponse {
 export interface StandingEntry {
   rank?: number;
   placement?: number;
+  /** API often returns name under player.best_identifier */
+  player?: { best_identifier?: string; id?: number; [key: string]: unknown };
   player_name?: string;
   username?: string;
   display_name?: string;
   wins?: number;
   losses?: number;
+  /** API returns e.g. "3-0-1" */
+  record?: string;
+  match_record?: string;
   match_points?: number;
   opponent_match_win_pct?: number;
+  opponent_match_win_percentage?: number;
   game_win_pct?: number;
+  game_win_percentage?: number;
   [key: string]: unknown;
 }
 
@@ -115,14 +142,59 @@ export interface StandingsResponse {
   results: StandingEntry[];
 }
 
+/** A player in a match (from round matches API). */
+export interface PlayerMatchRelationship {
+  id?: number;
+  player_order?: number;
+  player?: { id?: number; best_identifier?: string; [key: string]: unknown };
+  [key: string]: unknown;
+}
+
+/** A single match in a tournament round (pairing + result). */
+export interface RoundMatchEntry {
+  id?: number;
+  status?: string;
+  table_number?: number;
+  winning_player?: number | null;
+  games_won_by_winner?: number;
+  games_won_by_loser?: number;
+  match_is_bye?: boolean;
+  match_is_intentional_draw?: boolean;
+  match_is_unintentional_draw?: boolean;
+  player_match_relationships?: PlayerMatchRelationship[];
+  players?: number[];
+  [key: string]: unknown;
+}
+
+export interface MatchesResponse {
+  count: number;
+  total: number;
+  page_size: number;
+  current_page_number: number;
+  next_page_number: number | null;
+  previous_page_number: number | null;
+  results: RoundMatchEntry[];
+}
+
 /** Event registrations (paginated). */
 export interface RegistrationEntry {
   id?: number;
-  user?: { username?: string; display_name?: string; first_name?: string; last_name?: string; [key: string]: unknown };
+  /** API uses best_identifier for display name (e.g. "Corey J", "Corex"). */
+  best_identifier?: string;
+  user?: {
+    username?: string;
+    display_name?: string;
+    first_name?: string;
+    last_name?: string;
+    best_identifier?: string;
+    [key: string]: unknown;
+  };
   display_name?: string;
   username?: string;
   status?: string;
+  registration_status?: string;
   registered_at?: string;
+  registration_completed_datetime?: string;
   [key: string]: unknown;
 }
 

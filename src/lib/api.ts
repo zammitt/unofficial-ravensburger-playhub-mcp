@@ -8,6 +8,7 @@ import type {
   EventsResponse,
   GameplayFormat,
   GameStore,
+  MatchesResponse,
   RegistrationsResponse,
   StandingEntry,
   StandingsResponse,
@@ -138,6 +139,31 @@ export async function fetchTournamentRoundStandings(
   pageSize: number = 25
 ): Promise<StandingsResponse> {
   const url = new URL(`${API_BASE}/tournament-rounds/${roundId}/standings/paginated/`);
+  url.searchParams.set("page", page.toString());
+  url.searchParams.set("page_size", pageSize.toString());
+
+  const response = await fetch(url.toString(), {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      Referer: "https://tcg.ravensburgerplay.com/",
+    },
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`API request failed: ${response.status} ${response.statusText} - ${text}`);
+  }
+
+  return response.json();
+}
+
+export async function fetchTournamentRoundMatches(
+  roundId: number,
+  page: number = 1,
+  pageSize: number = 25
+): Promise<MatchesResponse> {
+  const url = new URL(`${API_BASE}/tournament-rounds/${roundId}/matches/paginated/`);
   url.searchParams.set("page", page.toString());
   url.searchParams.set("page_size", pageSize.toString());
 

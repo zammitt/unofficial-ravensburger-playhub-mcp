@@ -8,6 +8,7 @@ import {
   fetchEventDetails,
   fetchEventRegistrations,
   fetchEvents,
+  fetchTournamentRoundMatches,
   fetchTournamentRoundStandings,
   resolveCategoryIds,
   resolveFormatIds,
@@ -15,6 +16,7 @@ import {
 } from "../lib/api.js";
 import {
   formatEvent,
+  formatMatchEntry,
   formatRegistrationEntry,
   formatStandingEntry,
 } from "../lib/formatters.js";
@@ -56,7 +58,10 @@ export function registerEventTools(server: McpServer): void {
       if (args.start_date) {
         params.start_date_after = new Date(args.start_date).toISOString();
       } else {
-        params.start_date_after = new Date().toISOString();
+        // Start of today (UTC) so events that already started today are included
+        const now = new Date();
+        const startOfToday = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+        params.start_date_after = startOfToday.toISOString();
       }
 
       if (args.formats && args.formats.length > 0) {
@@ -129,7 +134,7 @@ export function registerEventTools(server: McpServer): void {
     "get_event_details",
     {
       description:
-        "Get full details for one Disney Lorcana event by ID. Use after search_events or search_events_by_city when the user asks for more info about a specific event, or when you have an event ID (e.g. from a previous search).",
+        "Get full details for one Disney Lorcana event by ID. Use after search_events or search_events_by_city when the user asks for more info, results, or standings. For tournaments, the response includes tournament round IDs—use the latest completed round ID with get_tournament_round_standings to get current/final standings and results.",
       inputSchema: {
         event_id: z.number().describe("Event ID (e.g. from search results)"),
       },
@@ -164,7 +169,7 @@ export function registerEventTools(server: McpServer): void {
     "get_tournament_round_standings",
     {
       description:
-        "Get standings (leaderboard) for a tournament round. Use when the user asks who is winning, standings, or results for a round. You need the round ID (sometimes in event context or from get_event_details).",
+        "Get standings (leaderboard) for a tournament round. Use when the user asks who is winning, standings, or results. Call get_event_details first for the event—the response lists round IDs; use the latest completed round ID (e.g. final Swiss round) for current/final standings.",
       inputSchema: {
         round_id: z.number().describe("Tournament round ID (e.g. 414976)"),
         page: z.number().default(1).describe("Page number (default: 1)"),
@@ -209,6 +214,161 @@ export function registerEventTools(server: McpServer): void {
             {
               type: "text" as const,
               text: `Error fetching round standings: ${error instanceof Error ? error.message : String(error)}`,
+            },
+          ],
+          isError: true,
+        };
+      }
+    }
+  );
+
+  // Tool: Get Round Matches (pairings and results for a round)
+  server.registerTool(
+    "get_round_matches",
+    {
+      description:
+        "Get match pairings and results for a tournament round. Use when the user asks for pairings, match results, or who played whom. You need the round ID (from get_event_details—the response lists round IDs).",
+      inputSchema: {
+        round_id: z.number().describe("Tournament round ID (e.g. from get_event_details)"),
+        page: z.number().default(1).describe("Page number (default: 1)"),
+        page_size: z.number().default(25).describe("Results per page (default: 25)"),
+      },
+    },
+    async (args) => {
+      try {
+        const response = await fetchTournamentRoundMatches(
+          args.round_id,
+          args.page,
+          args.page_size
+        );
+
+        if (response.results.length === 0) {
+          return {
+            content: [
+              {
+                type: "text" as const,
+                text: `No matches found for round ${args.round_id}. The round may not exist or pairings may not be published yet.`,
+              },
+            ],
+          };
+        }
+
+        const formatted = response.results
+          .map((e, i) => formatMatchEntry(e, (args.page - 1) * args.page_size + i))
+          .join("\n\n");
+        const summary = `Round ${args.round_id} matches: ${response.count} shown (page ${args.page} of ${Math.ceil(response.total / args.page_size)}). Total: ${response.total}.\n\n${formatted}`;
+
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: summary,
+            },
+          ],
+        };
+      } catch (error) {
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: `Error fetching round matches: ${error instanceof Error ? error.message : String(error)}`,
+            },
+          ],
+          isError: true,
+        };
+      }
+    }
+  );
+
+  // Tool: Get Event Standings (tries completed rounds until one returns standings)
+  server.registerTool(
+    "get_event_standings",
+    {
+      description:
+        "Get tournament standings/results for an event by event ID. Use when the user asks for results, standings, or who won. This tool fetches the event's rounds and returns standings from the latest completed round that has data—so you don't need to look up round IDs. Prefer this over get_tournament_round_standings when the user asks for 'event results' or 'championship results'.",
+      inputSchema: {
+        event_id: z.number().describe("Event ID (from search_events, search_events_by_city, or get_event_details)"),
+        page_size: z.number().default(50).describe("Max standings to return from the round (default: 50)"),
+      },
+    },
+    async (args) => {
+      try {
+        const event = await fetchEventDetails(args.event_id);
+        const phases = event.tournament_phases;
+        if (!phases?.length) {
+          return {
+            content: [
+              {
+                type: "text" as const,
+                text: `Event "${event.name}" (ID: ${args.event_id}) has no tournament rounds. Standings are only available for events with rounds.`,
+              },
+            ],
+          };
+        }
+
+        const allRounds: { id: number; round_number: number; phase_name?: string }[] = [];
+        for (const phase of phases) {
+          if (!phase.rounds?.length) continue;
+          for (const r of phase.rounds) {
+            allRounds.push({
+              id: r.id,
+              round_number: r.round_number,
+              phase_name: phase.phase_name,
+            });
+          }
+        }
+        // Try newest round first (highest round_number) so we return current/latest standings
+        allRounds.sort((a, b) => b.round_number - a.round_number);
+
+        if (allRounds.length === 0) {
+          return {
+            content: [
+              {
+                type: "text" as const,
+                text: `Event "${event.name}" (ID: ${args.event_id}) has no completed rounds yet. Standings will appear once rounds are finished.`,
+              },
+            ],
+          };
+        }
+
+        for (const round of allRounds) {
+          try {
+            const response = await fetchTournamentRoundStandings(
+              round.id,
+              1,
+              args.page_size
+            );
+            if (response.results.length > 0) {
+              const label = round.phase_name
+                ? `Round ${round.round_number} (${round.phase_name})`
+                : `Round ${round.round_number}`;
+              const formatted = response.results
+                .map((e, i) => formatStandingEntry(e, i))
+                .join("\n\n");
+              const text = `${event.name} (ID: ${args.event_id}) — Standings for ${label} (round ID: ${round.id})\nTotal: ${response.total}\n\n${formatted}`;
+              return {
+                content: [{ type: "text" as const, text }],
+              };
+            }
+          } catch {
+            continue;
+          }
+        }
+
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: `No standings available for event "${event.name}" (ID: ${args.event_id}). The API returned no standings for any of its ${allRounds.length} round(s). The event may still be in progress or standings may not be published yet. Round IDs tried: ${allRounds.map((r) => r.id).join(", ")}.`,
+            },
+          ],
+        };
+      } catch (error) {
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: `Error fetching event standings: ${error instanceof Error ? error.message : String(error)}`,
             },
           ],
           isError: true,
@@ -331,6 +491,12 @@ export function registerEventTools(server: McpServer): void {
         const latitude = parseFloat(location.lat);
         const longitude = parseFloat(location.lon);
 
+        const startDateAfter = args.start_date
+          ? new Date(args.start_date).toISOString()
+          : (() => {
+              const now = new Date();
+              return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())).toISOString();
+            })();
         const params: Record<string, string | string[]> = {
           game_slug: "disney-lorcana",
           latitude: latitude.toString(),
@@ -339,9 +505,7 @@ export function registerEventTools(server: McpServer): void {
           display_statuses: args.statuses as string[],
           page: args.page.toString(),
           page_size: Math.min(args.page_size, 100).toString(),
-          start_date_after: args.start_date
-            ? new Date(args.start_date).toISOString()
-            : new Date().toISOString(),
+          start_date_after: startDateAfter,
         };
 
         if (args.formats && args.formats.length > 0) {
