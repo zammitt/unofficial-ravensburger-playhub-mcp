@@ -1,0 +1,260 @@
+import { describe, it } from "node:test";
+import assert from "node:assert";
+import {
+  formatStore,
+  formatEvent,
+  formatStandingEntry,
+  formatRegistrationEntry,
+} from "../lib/formatters.js";
+import type { GameStore, Event, StandingEntry, RegistrationEntry } from "../lib/types.js";
+
+describe("formatStore", () => {
+  it("formats minimal store with name and id", () => {
+    const gameStore: GameStore = {
+      id: "gs1",
+      store: { id: 1, name: "Test Store" },
+      store_types: [],
+      store_types_pretty: [],
+    };
+    const out = formatStore(gameStore);
+    assert.ok(out.includes("**Test Store**"));
+    assert.ok(out.includes("Store ID: 1"));
+  });
+
+  it("includes address, phone, email, website when present", () => {
+    const gameStore: GameStore = {
+      id: "gs1",
+      store: {
+        id: 1,
+        name: "Full Store",
+        full_address: "123 Main St",
+        phone_number: "555-1234",
+        email: "store@example.com",
+        website: "https://store.example.com",
+      },
+      store_types: [],
+      store_types_pretty: [],
+    };
+    const out = formatStore(gameStore);
+    assert.ok(out.includes("📍 123 Main St"));
+    assert.ok(out.includes("📞 555-1234"));
+    assert.ok(out.includes("📧 store@example.com"));
+    assert.ok(out.includes("🌐 https://store.example.com"));
+  });
+
+  it("includes store_types_pretty when present", () => {
+    const gameStore: GameStore = {
+      id: "gs1",
+      store: { id: 1, name: "Store" },
+      store_types: ["flgs"],
+      store_types_pretty: ["Friendly Local Game Store"],
+    };
+    const out = formatStore(gameStore);
+    assert.ok(out.includes("🏷️ Types: Friendly Local Game Store"));
+  });
+
+  it("includes bio when present", () => {
+    const gameStore: GameStore = {
+      id: "gs1",
+      store: { id: 1, name: "Store", bio: "We sell cards." },
+      store_types: [],
+      store_types_pretty: [],
+    };
+    const out = formatStore(gameStore);
+    assert.ok(out.includes("We sell cards."));
+  });
+
+  it("includes social links when present", () => {
+    const gameStore: GameStore = {
+      id: "gs1",
+      store: {
+        id: 1,
+        name: "Store",
+        discord_url: "https://discord.gg/abc",
+        facebook_url: "https://facebook.com/store",
+        instagram_handle: "store",
+        twitter_handle: "store",
+      },
+      store_types: [],
+      store_types_pretty: [],
+    };
+    const out = formatStore(gameStore);
+    assert.ok(out.includes("Discord: https://discord.gg/abc"));
+    assert.ok(out.includes("Facebook: https://facebook.com/store"));
+    assert.ok(out.includes("Instagram: @store"));
+    assert.ok(out.includes("Twitter: @store"));
+  });
+});
+
+describe("formatEvent", () => {
+  it("formats minimal event with name and id", () => {
+    const event: Event = {
+      id: 100,
+      name: "Weekly League",
+      start_datetime: "2025-02-01T18:00:00Z",
+    };
+    const out = formatEvent(event);
+    assert.ok(out.includes("**Weekly League**"));
+    assert.ok(out.includes("ID: 100"));
+    assert.ok(out.includes("📅"));
+  });
+
+  it("includes format, category, store, address when present", () => {
+    const event: Event = {
+      id: 101,
+      name: "Event",
+      start_datetime: "2025-02-01T18:00:00Z",
+      gameplay_format: { id: "f1", name: "Constructed" },
+      event_configuration_template: "template-id",
+      store: { id: 1, name: "Game Store" },
+      full_address: "456 Oak Ave",
+    };
+    const out = formatEvent(event);
+    assert.ok(out.includes("🎮 Format: Constructed"));
+    assert.ok(out.includes("📁 Category:"));
+    assert.ok(out.includes("🏪 Store: Game Store"));
+    assert.ok(out.includes("📍 456 Oak Ave"));
+  });
+
+  it("includes distance when present", () => {
+    const event: Event = {
+      id: 102,
+      name: "Event",
+      start_datetime: "2025-02-01T18:00:00Z",
+      distance_in_miles: 5.5,
+    };
+    const out = formatEvent(event);
+    assert.ok(out.includes("🚗 Distance: 5.5 miles"));
+  });
+
+  it("shows paid entry when cost_in_cents > 0", () => {
+    const event: Event = {
+      id: 103,
+      name: "Event",
+      start_datetime: "2025-02-01T18:00:00Z",
+      cost_in_cents: 1500,
+      currency: "USD",
+    };
+    const out = formatEvent(event);
+    assert.ok(out.includes("💰 Entry: USD $15.00"));
+  });
+
+  it("shows free entry when cost_in_cents is 0", () => {
+    const event: Event = {
+      id: 104,
+      name: "Event",
+      start_datetime: "2025-02-01T18:00:00Z",
+      cost_in_cents: 0,
+    };
+    const out = formatEvent(event);
+    assert.ok(out.includes("💰 Entry: Free"));
+  });
+
+  it("shows participants when capacity present", () => {
+    const event: Event = {
+      id: 105,
+      name: "Event",
+      start_datetime: "2025-02-01T18:00:00Z",
+      capacity: 32,
+      registered_user_count: 20,
+    };
+    const out = formatEvent(event);
+    assert.ok(out.includes("👥 Participants: 20/32"));
+  });
+
+  it("shows registered count when no capacity", () => {
+    const event: Event = {
+      id: 106,
+      name: "Event",
+      start_datetime: "2025-02-01T18:00:00Z",
+      registered_user_count: 8,
+    };
+    const out = formatEvent(event);
+    assert.ok(out.includes("👥 Registered: 8"));
+  });
+
+  it("includes display_status and settings when present", () => {
+    const event: Event = {
+      id: 107,
+      name: "Event",
+      start_datetime: "2025-02-01T18:00:00Z",
+      display_status: "Upcoming",
+      settings: { event_lifecycle_status: "REGISTRATION_OPEN" },
+    };
+    const out = formatEvent(event);
+    assert.ok(out.includes("📊 Status: Upcoming"));
+    assert.ok(out.includes("🎟️ Registration: registration open"));
+  });
+
+  it("includes featured and online flags when true", () => {
+    const event: Event = {
+      id: 108,
+      name: "Event",
+      start_datetime: "2025-02-01T18:00:00Z",
+      is_headlining_event: true,
+      event_is_online: true,
+    };
+    const out = formatEvent(event);
+    assert.ok(out.includes("⭐ Featured Event"));
+    assert.ok(out.includes("🌐 Online Event"));
+  });
+
+  it("includes description when present", () => {
+    const event: Event = {
+      id: 109,
+      name: "Event",
+      start_datetime: "2025-02-01T18:00:00Z",
+      description: "Bring your deck!",
+    };
+    const out = formatEvent(event);
+    assert.ok(out.includes("Bring your deck!"));
+  });
+});
+
+describe("formatStandingEntry", () => {
+  it("falls back to username when player_name and display_name missing", () => {
+    const entry: StandingEntry = { username: "player1" };
+    const out = formatStandingEntry(entry, 0);
+    assert.ok(out.includes("1. player1"));
+  });
+
+  it("uses em dash when no name fields", () => {
+    const entry: StandingEntry = {};
+    const out = formatStandingEntry(entry, 0);
+    assert.ok(out.includes("1. —"));
+  });
+
+  it("shows record with only wins (losses 0)", () => {
+    const entry: StandingEntry = { player_name: "A", wins: 3 };
+    const out = formatStandingEntry(entry, 0);
+    assert.ok(out.includes("Record: 3-0"));
+  });
+});
+
+describe("formatRegistrationEntry", () => {
+  it("falls back to em dash when no name available", () => {
+    const entry: RegistrationEntry = {};
+    const out = formatRegistrationEntry(entry, 0);
+    assert.ok(out.includes("1. —"));
+  });
+
+  it("uses user.username when display_name missing", () => {
+    const entry: RegistrationEntry = { user: { username: "u1" } };
+    const out = formatRegistrationEntry(entry, 0);
+    assert.ok(out.includes("1. u1"));
+  });
+
+  it("includes Registered line for invalid date string (Invalid Date or raw fallback)", () => {
+    const entry: RegistrationEntry = {
+      display_name: "X",
+      registered_at: "not-a-date",
+    };
+    const out = formatRegistrationEntry(entry, 0);
+    assert.ok(out.includes("Registered:"), "should include Registered line");
+    // new Date("not-a-date") does not throw; toLocaleString() yields "Invalid Date" in most envs
+    assert.ok(
+      out.includes("Invalid Date") || out.includes("not-a-date"),
+      "should show Invalid Date or raw value"
+    );
+  });
+});

@@ -1,0 +1,105 @@
+/**
+ * MCP tools for listing filters (formats, categories) and server capabilities (for LLM discovery).
+ */
+
+import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { fetchCategories, fetchGameplayFormats, updateFilterMaps } from "../lib/api.js";
+
+const CAPABILITIES_TEXT = `# Lorcana Event Finder – Tool Guide
+
+Use this to choose the right tool. All tools return plain text.
+
+| Tool | When to use |
+|------|-------------|
+| **list_filters** | User wants to filter events by format (e.g. Constructed) or category; call first to get exact names for \`formats\` / \`categories\` parameters. |
+| **search_events** | You have latitude and longitude (e.g. from a map or device). |
+| **search_events_by_city** | User says a city name, e.g. "events in Seattle" or "Austin, TX". |
+| **get_event_details** | User asks for more info about a specific event; you have an event ID (from search). |
+| **get_event_registrations** | User asks who is signed up or the registration list; you need event ID. |
+| **get_tournament_round_standings** | User asks who is winning or standings for a round; you need round ID. |
+| **search_stores** | User asks for stores, venues, or places to play; optional: name (\`search\`) and/or location (lat/long + \`radius_miles\`). |
+| **search_stores_by_city** | User says a city for stores, e.g. "stores in Seattle". |
+
+**Typical flow:** For "events near Seattle" → \`search_events_by_city\` with \`city: "Seattle, WA"\`. For "who's signed up for that event?" → \`get_event_registrations\` with the event ID from the previous search.
+`;
+
+export function registerFilterTools(server: McpServer): void {
+  // Tool: List Capabilities (for LLM discovery)
+  server.registerTool(
+    "list_capabilities",
+    {
+      description:
+        "List all tools and when to use each. Call this first if you are unsure which tool to use (e.g. search_events vs search_events_by_city, or how to get event IDs).",
+      inputSchema: {},
+    },
+    async () => ({
+      content: [{ type: "text" as const, text: CAPABILITIES_TEXT }],
+    })
+  );
+
+  // Tool: List Available Filters
+  server.registerTool(
+    "list_filters",
+    {
+      description:
+        "List format and category names you can use when searching events. Call before search_events or search_events_by_city if the user wants to filter by format (e.g. Constructed) or category. Use the exact names shown in the formats and categories array parameters.",
+      inputSchema: {},
+    },
+    async () => {
+      try {
+        const [formats, categories] = await Promise.all([
+          fetchGameplayFormats(),
+          fetchCategories(),
+        ]);
+
+        updateFilterMaps(formats, categories);
+
+        const formatList = formats.map((f) => `- ${f.name}${f.description ? ` - ${f.description}` : ""}`).join("\n");
+        const categoryList = categories.map((c) => `- ${c.name}`).join("\n");
+
+        const filterInfo = `# Event Search Filters (use exact names in parameters)
+
+## Formats (use in \`formats\` array)
+${formatList}
+
+## Categories (use in \`categories\` array)
+${categoryList}
+
+## Statuses (use in \`statuses\` array)
+- upcoming - Not started yet
+- inProgress - Live now
+- past - Completed
+
+## Example
+To filter by format and category in search_events or search_events_by_city, pass arrays of the exact names above, e.g. \`formats: ["Constructed"]\`, \`categories: ["League"]\`.
+
+## Other optional parameters
+- featured_only (boolean): Only featured events
+- text_search (string): Search event names
+- store_id (number): Limit to one store (IDs from search_stores)
+- radius_miles (number): Search radius, default 25
+- start_date (string): YYYY-MM-DD, events starting after this date
+`;
+
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: filterInfo,
+            },
+          ],
+        };
+      } catch (error) {
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: `Error fetching filter options: ${error instanceof Error ? error.message : String(error)}`,
+            },
+          ],
+          isError: true,
+        };
+      }
+    }
+  );
+}
