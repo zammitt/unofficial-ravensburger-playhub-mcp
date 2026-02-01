@@ -1,6 +1,6 @@
 {
   "name": "unofficial-ravensburger-playhub-mcp",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "MCP server for finding Disney Lorcana TCG events",
   "type": "module",
   "main": "dist/index.js",
