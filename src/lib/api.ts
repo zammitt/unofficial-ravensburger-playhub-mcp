@@ -17,8 +17,16 @@ import type {
 
 const API_BASE = "https://api.cloudflare.ravensburgerplay.com/hydraproxy/api/v2";
 
-/** Event statuses supported by the API. */
-export const STATUSES = ["upcoming", "inProgress", "past"] as const;
+/** Event statuses for tool schema. "all" expands to upcoming, inProgress, past when calling the API. */
+export const STATUSES = ["upcoming", "inProgress", "past", "all"] as const;
+
+const API_STATUSES = ["upcoming", "inProgress", "past"] as const;
+
+/** Expand statuses for API: "all" or empty → [upcoming, inProgress, past]. Other values passed through. */
+export function expandStatusesForApi(statuses: readonly string[]): string[] {
+  if (statuses.length === 0 || statuses.includes("all")) return [...API_STATUSES];
+  return statuses.filter((s) => s !== "all") as string[];
+}
 
 // Dynamic lookup maps - populated at startup and refreshed by list_filters
 let FORMAT_MAP: Map<string, string> = new Map(); // name -> id

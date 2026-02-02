@@ -163,6 +163,7 @@ The server exposes tools that are easy for LLMs to choose and call: descriptions
 | **list_filters** | Before searching events by format or category; returns exact names for the `formats` and `categories` parameters. |
 | **search_events** | When you have latitude/longitude (e.g. from a map or device). |
 | **search_events_by_city** | When the user says a city name (e.g. "events in Seattle" or "Austin, TX"). Geocoded. |
+| **get_store_events** | Events at a specific store by store ID (from search_stores). Use when the user asks about events at a particular store (e.g. "events at Game Haven"). No city or geocoding needed. |
 | **get_event_details** | Full details for one event; use when you have an event ID. For tournaments, the response includes **round IDs**. |
 | **get_event_standings** | **Event results/standings** by event ID. Use for "championship results", "who won", or "standings". The tool finds rounds and returns standings automatically—prefer over get_tournament_round_standings when the user asks for event results. |
 | **get_event_registrations** | Who is signed up for an event (names from API); needs event ID. |
@@ -197,7 +198,7 @@ npm run test:coverage   # run tests with coverage report (c8)
 ### Tests
 
 - **Unit tests** – `api.test.ts` (API client: filter maps, fetch with mocked `fetch`, `loadFilterOptions`), `formatters.test.ts` (formatStore, formatEvent, formatStandingEntry, formatRegistrationEntry), `registrations.test.ts`, `standings.test.ts`. No network required for unit tests.
-- **Integration tests** – `mcp-tools.integration.test.ts` spawns the MCP server and calls each tool (required-only, optional params, pagination). They hit the real Ravensburger Play API and Nominatim for geocoding, so **network access is required** and tests may be slower or flaky if the APIs are slow or down.
+- **Integration tests** – `src/test/mcp-tools.integration.test.ts` spawns the MCP server and calls each tool (required-only, optional params, pagination). They hit the real Ravensburger Play API and Nominatim for geocoding, so **network access is required** and tests may be slower or flaky if the APIs are slow or down.
 
 Coverage is reported for `dist/` (excluding `dist/test/`). Run `npm run test:coverage` to see statement/branch/function coverage for the app code.
 

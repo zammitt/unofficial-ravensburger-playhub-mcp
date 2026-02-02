@@ -14,6 +14,7 @@ Use this to choose the right tool. All tools return plain text.
 | **list_filters** | User wants to filter events by format (e.g. Constructed) or category; call first to get exact names for \`formats\` / \`categories\` parameters. |
 | **search_events** | You have latitude and longitude (e.g. from a map or device). |
 | **search_events_by_city** | User says a city name, e.g. "events in Seattle" or "Austin, TX". |
+| **get_store_events** | User asks about events at a specific store (e.g. "events at Game Haven", "what's at Dragon's Lair"). Use after search_stores—takes store_id directly, no city needed. |
 | **get_event_details** | User asks for more info about a specific event; you have an event ID (from search). |
 | **get_event_standings** | User asks for **results, standings, or who won** for an event. Use event ID only; this tool finds rounds and returns standings automatically. Prefer over get_tournament_round_standings for "championship results" or "event results". |
 | **get_event_registrations** | User asks who is signed up or the registration list; you need event ID. |
@@ -24,7 +25,10 @@ Use this to choose the right tool. All tools return plain text.
 
 **Dates:** For "today's events", pass \`start_date: "YYYY-MM-DD"\` with **today's date** (correct year) so events that already started today are included. If you omit start_date, results are from the start of today (UTC).
 
-**Typical flow:** For "events near Seattle" → \`search_events_by_city\` with \`city: "Seattle, WA"\`. For "summarize the results of the RIW set championship" → find the event (e.g. search by city + store or text), then \`get_event_standings(event_id)\` to get standings in one call.
+**Typical flows:**
+- "events near Seattle" → \`search_events_by_city(city: "Seattle, WA")\`
+- "events at Game Haven" → \`search_stores(search: "Game Haven")\` to get store_id, then \`get_store_events(store_id: ...)\`
+- "how did X do at the Dragon's Lair event" → \`search_stores(search: "Dragon's Lair")\`, then \`get_store_events(store_id: ..., statuses: ["past"])\`, then \`get_event_standings(event_id)\`
 `;
 
 export function registerFilterTools(server: McpServer): void {
@@ -72,7 +76,8 @@ ${categoryList}
 ## Statuses (use in \`statuses\` array)
 - upcoming - Not started yet
 - inProgress - Live now
-- past - Completed
+- past - Finished
+- all - All three (upcoming, inProgress, past); expands when calling the API
 
 ## Example
 To filter by format and category in search_events or search_events_by_city, pass arrays of the exact names above, e.g. \`formats: ["Constructed"]\`, \`categories: ["League"]\`.

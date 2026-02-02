@@ -5,6 +5,7 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import {
+  expandStatusesForApi,
   fetchEventDetails,
   fetchEventRegistrations,
   fetchEvents,
@@ -32,10 +33,11 @@ export function registerEventTools(server: McpServer): void {
         latitude: z.number().describe("Latitude of the search center (e.g. 42.33)"),
         longitude: z.number().describe("Longitude of the search center (e.g. -83.05)"),
         radius_miles: z.number().default(25).describe("Search radius in miles (default: 25)"),
-        start_date: z.string().optional().describe("Only show events starting after this date (YYYY-MM-DD)"),
+        start_date: z.string().optional().describe("Only show events starting on or after this date in UTC (YYYY-MM-DD)"),
+        end_date: z.string().optional().describe("Only show events starting before this date in UTC (YYYY-MM-DD)"),
         formats: z.array(z.string()).optional().describe("Filter by format names; get exact names from list_filters (e.g. ['Constructed'])"),
         categories: z.array(z.string()).optional().describe("Filter by category names; get exact names from list_filters"),
-        statuses: z.array(z.enum(STATUSES)).default(["upcoming", "inProgress"]).describe("Include: upcoming, inProgress (live), past"),
+        statuses: z.array(z.enum(STATUSES)).default(["upcoming", "inProgress"]).describe("Include: upcoming, inProgress (live), past, or all (all three)"),
         featured_only: z.boolean().default(false).describe("If true, only featured/headlining events"),
         text_search: z.string().optional().describe("Search event names by keyword"),
         store_id: z.number().optional().describe("Limit to events at this store (ID from search_stores)"),
@@ -53,15 +55,19 @@ export function registerEventTools(server: McpServer): void {
         page_size: Math.min(args.page_size, 100).toString(),
       };
 
-      params.display_statuses = args.statuses as string[];
+      params.display_statuses = expandStatusesForApi(args.statuses as string[]);
 
       if (args.start_date) {
-        params.start_date_after = new Date(args.start_date).toISOString();
+        params.start_date_after = new Date(args.start_date + "T00:00:00Z").toISOString();
       } else {
-        // Start of today (UTC) so events that already started today are included
+        // Default to start of today (UTC)
         const now = new Date();
         const startOfToday = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
         params.start_date_after = startOfToday.toISOString();
+      }
+
+      if (args.end_date) {
+        params.start_date_before = new Date(args.end_date + "T00:00:00Z").toISOString();
       }
 
       if (args.formats && args.formats.length > 0) {
@@ -444,10 +450,11 @@ export function registerEventTools(server: McpServer): void {
       inputSchema: {
         city: z.string().describe("City name, ideally with state/country (e.g. 'Detroit, MI' or 'New York, NY')"),
         radius_miles: z.number().default(25).describe("Search radius in miles (default: 25)"),
-        start_date: z.string().optional().describe("Only events starting after this date (YYYY-MM-DD)"),
+        start_date: z.string().optional().describe("Only show events starting on or after this date in UTC (YYYY-MM-DD)"),
+        end_date: z.string().optional().describe("Only show events starting before this date in UTC (YYYY-MM-DD)"),
         formats: z.array(z.string()).optional().describe("Filter by format names from list_filters (e.g. ['Constructed'])"),
         categories: z.array(z.string()).optional().describe("Filter by category names from list_filters"),
-        statuses: z.array(z.enum(STATUSES)).default(["upcoming", "inProgress"]).describe("Include: upcoming, inProgress, past"),
+        statuses: z.array(z.enum(STATUSES)).default(["upcoming", "inProgress"]).describe("Include: upcoming, inProgress (live), past, or all (all three)"),
         featured_only: z.boolean().default(false).describe("If true, only featured events"),
         text_search: z.string().optional().describe("Search event names by keyword"),
         store_id: z.number().optional().describe("Limit to events at this store (ID from search_stores)"),
@@ -492,21 +499,26 @@ export function registerEventTools(server: McpServer): void {
         const longitude = parseFloat(location.lon);
 
         const startDateAfter = args.start_date
-          ? new Date(args.start_date).toISOString()
+          ? new Date(args.start_date + "T00:00:00Z").toISOString()
           : (() => {
               const now = new Date();
               return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())).toISOString();
             })();
+
         const params: Record<string, string | string[]> = {
           game_slug: "disney-lorcana",
           latitude: latitude.toString(),
           longitude: longitude.toString(),
           num_miles: args.radius_miles.toString(),
-          display_statuses: args.statuses as string[],
+          display_statuses: expandStatusesForApi(args.statuses as string[]),
           page: args.page.toString(),
           page_size: Math.min(args.page_size, 100).toString(),
           start_date_after: startDateAfter,
         };
+
+        if (args.end_date) {
+          params.start_date_before = new Date(args.end_date + "T00:00:00Z").toISOString();
+        }
 
         if (args.formats && args.formats.length > 0) {
           const formatIds = resolveFormatIds(args.formats);
@@ -564,6 +576,108 @@ export function registerEventTools(server: McpServer): void {
             {
               type: "text" as const,
               text: `Error: ${error instanceof Error ? error.message : String(error)}`,
+            },
+          ],
+          isError: true,
+        };
+      }
+    }
+  );
+
+  // Tool: Get Store Events
+  server.registerTool(
+    "get_store_events",
+    {
+      description:
+        "Get events at a specific store by store ID. Use this after search_stores when the user asks about events at a particular store (e.g. 'events at Game Haven', 'what's coming up at Dragon's Lair'). This is simpler than search_events_by_city when you already have the store ID—no city name or geocoding needed.",
+      inputSchema: {
+        store_id: z.number().describe("Store ID (from search_stores)"),
+        start_date: z.string().optional().describe("Only show events starting on or after this date in UTC (YYYY-MM-DD)"),
+        end_date: z.string().optional().describe("Only show events starting before this date in UTC (YYYY-MM-DD)"),
+        formats: z.array(z.string()).optional().describe("Filter by format names from list_filters (e.g. ['Constructed'])"),
+        categories: z.array(z.string()).optional().describe("Filter by category names from list_filters"),
+        statuses: z.array(z.enum(STATUSES)).default(["all"]).describe("Include: upcoming, inProgress (live), past, or all (all three)"),
+        page: z.number().default(1).describe("Page number (default: 1)"),
+        page_size: z.number().default(25).describe("Results per page, max 100 (default: 25)"),
+      },
+    },
+    async (args) => {
+      try {
+        // API requires lat/long + radius; use global center + Earth-covering radius
+        // so store= filter returns that store's events regardless of region
+        let storeName = `Store ${args.store_id}`;
+        const startDateAfter = args.start_date
+          ? new Date(args.start_date + "T00:00:00Z").toISOString()
+          : (() => {
+              const now = new Date();
+              return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())).toISOString();
+            })();
+
+        const params: Record<string, string | string[]> = {
+          game_slug: "disney-lorcana",
+          latitude: "0",
+          longitude: "0",
+          num_miles: "12500", // ~half Earth circumference; covers globe for store-filtered queries
+          display_statuses: expandStatusesForApi(args.statuses as string[]),
+          store: args.store_id.toString(),
+          page: args.page.toString(),
+          page_size: Math.min(args.page_size, 100).toString(),
+          start_date_after: startDateAfter,
+        };
+
+        if (args.end_date) {
+          params.start_date_before = new Date(args.end_date + "T00:00:00Z").toISOString();
+        }
+
+        if (args.formats && args.formats.length > 0) {
+          const formatIds = resolveFormatIds(args.formats);
+          if (formatIds.length > 0) {
+            params.gameplay_format_id = formatIds;
+          }
+        }
+
+        if (args.categories && args.categories.length > 0) {
+          const categoryIds = resolveCategoryIds(args.categories);
+          if (categoryIds.length > 0) {
+            params.event_configuration_template_id = categoryIds;
+          }
+        }
+
+        const response = await fetchEvents(params);
+
+        // Extract store name from the first event if available
+        if (response.results.length > 0 && response.results[0].store?.name) {
+          storeName = response.results[0].store.name;
+        }
+
+        if (response.results.length === 0) {
+          return {
+            content: [
+              {
+                type: "text" as const,
+                text: `No events found at store ID ${args.store_id}. The store may not have any events matching your criteria, or the store ID may be invalid. Try adjusting date filters or statuses.`,
+              },
+            ],
+          };
+        }
+
+        const formattedEvents = response.results.map(formatEvent).join("\n\n---\n\n");
+        const summary = `Found ${response.count} event(s) at ${storeName}. Showing ${response.results.length} (page ${args.page} of ${Math.ceil(response.count / args.page_size)}).`;
+
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: `${summary}\n\n${formattedEvents}`,
+            },
+          ],
+        };
+      } catch (error) {
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: `Error fetching store events: ${error instanceof Error ? error.message : String(error)}`,
             },
           ],
           isError: true,

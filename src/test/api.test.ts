@@ -1,6 +1,7 @@
 import { describe, it, beforeEach, afterEach } from "node:test";
 import assert from "node:assert";
 import {
+  expandStatusesForApi,
   loadFilterOptions,
   updateFilterMaps,
   resolveFormatIds,
@@ -25,6 +26,25 @@ const sampleCategories: EventCategory[] = [
   { id: "cat-1", name: "League" },
   { id: "cat-2", name: "Tournament" },
 ];
+
+describe("expandStatusesForApi", () => {
+  it('expands "all" to upcoming, inProgress, past', () => {
+    assert.deepStrictEqual(expandStatusesForApi(["all"]), ["upcoming", "inProgress", "past"]);
+  });
+
+  it("passes through statuses when all is not present", () => {
+    assert.deepStrictEqual(expandStatusesForApi(["upcoming", "inProgress"]), ["upcoming", "inProgress"]);
+    assert.deepStrictEqual(expandStatusesForApi(["past"]), ["past"]);
+  });
+
+  it("when all is present with others, returns all three API statuses", () => {
+    assert.deepStrictEqual(expandStatusesForApi(["all", "past"]), ["upcoming", "inProgress", "past"]);
+  });
+
+  it("when input is empty, returns all three API statuses (avoids sending [] to API)", () => {
+    assert.deepStrictEqual(expandStatusesForApi([]), ["upcoming", "inProgress", "past"]);
+  });
+});
 
 describe("api – filter maps and resolution", () => {
   beforeEach(() => {

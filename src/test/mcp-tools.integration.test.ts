@@ -28,6 +28,7 @@ const EXPECTED_TOOL_NAMES = [
   "get_event_standings",
   "get_event_registrations",
   "search_events_by_city",
+  "get_store_events",
   "search_stores",
   "search_stores_by_city",
 ] as const;
@@ -247,6 +248,26 @@ describe("MCP server integration – all tools and call variations", { timeout: 
       page_size: 10,
     });
     assert.ok(!isError, `search_events_by_city (page_size) should not error: ${text}`);
+    assert.ok(typeof text === "string", "should return text");
+  });
+
+  it("get_store_events – required only", async () => {
+    // Use a known store ID for testing
+    const { text, isError } = await callTool("get_store_events", {
+      store_id: 4622,
+    });
+    assert.ok(!isError, `get_store_events should not error: ${text}`);
+    assert.ok(typeof text === "string", "should return text");
+  });
+
+  it("get_store_events – with optional params", async () => {
+    const { text, isError } = await callTool("get_store_events", {
+      store_id: 4622,
+      statuses: ["past"],
+      page: 1,
+      page_size: 5,
+    });
+    assert.ok(!isError, `get_store_events (optional) should not error: ${text}`);
     assert.ok(typeof text === "string", "should return text");
   });
 
