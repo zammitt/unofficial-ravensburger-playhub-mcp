@@ -73,6 +73,9 @@ export async function fetchEvents(params: Record<string, string | string[]>): Pr
     }
   }
 
+  console.error(`[fetchEvents] URL: ${url.toString()}`);
+  console.error(`[fetchEvents] Params: ${JSON.stringify(params)}`);
+
   const response = await fetch(url.toString(), {
     method: "GET",
     headers: {
@@ -86,7 +89,9 @@ export async function fetchEvents(params: Record<string, string | string[]>): Pr
     throw new Error(`API request failed: ${response.status} ${response.statusText} - ${text}`);
   }
 
-  return response.json();
+  const data = await response.json() as EventsResponse;
+  console.error(`[fetchEvents] Response: count=${data.count}, results=${data.results?.length ?? 0}`);
+  return data;
 }
 
 export async function fetchEventDetails(eventId: number): Promise<Event> {
