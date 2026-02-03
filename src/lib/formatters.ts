@@ -134,10 +134,8 @@ export function formatEvent(event: Event): string {
   const lines: string[] = [`**${event.name}** (ID: ${event.id})`];
 
   if (event.start_datetime) {
-    const startDate = new Date(event.start_datetime);
-    lines.push(
-      `📅 ${startDate.toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })} at ${startDate.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`
-    );
+    // Output raw ISO date - clients can parse/format as needed (e.g., Discord timestamps)
+    lines.push(`📅 ${event.start_datetime}`);
   }
 
   if (event.gameplay_format?.name) {
