@@ -26,6 +26,8 @@ const EXPECTED_TOOL_NAMES = [
   "get_tournament_round_standings",
   "get_round_matches",
   "get_event_standings",
+  "get_player_leaderboard",
+  "get_player_leaderboard_by_store",
   "get_event_registrations",
   "search_events_by_city",
   "get_store_events",
@@ -88,6 +90,7 @@ describe("MCP server integration – all tools and call variations", { timeout: 
     assert.ok(text.includes("search_events"), "capabilities should mention search_events");
     assert.ok(text.includes("search_events_by_city"), "capabilities should mention search_events_by_city");
     assert.ok(text.includes("get_event_details") || text.includes("get_event"), "capabilities should mention event details");
+    assert.ok(text.includes("get_player_leaderboard"), "capabilities should mention get_player_leaderboard");
     assert.ok(text.includes("list_filters"), "capabilities should mention list_filters");
   });
 
@@ -220,6 +223,64 @@ describe("MCP server integration – all tools and call variations", { timeout: 
     });
     assert.ok(!isError, `get_event_registrations (pagination) should not error: ${text}`);
     assert.ok(typeof text === "string", "should return text");
+  });
+
+  it("get_player_leaderboard – invalid date range returns error", async () => {
+    const { text, isError } = await callTool("get_player_leaderboard", {
+      city: "Detroit, MI",
+      start_date: "2026-02-01",
+      end_date: "2026-01-01",
+    });
+    assert.ok(isError, "should error when start_date is after end_date");
+    assert.ok(text.includes("start_date") || text.includes("end_date") || text.includes("before"), "message should mention dates");
+  });
+
+  it("get_player_leaderboard – valid params returns content", async () => {
+    const { text, isError } = await callTool("get_player_leaderboard", {
+      city: "Detroit, MI",
+      start_date: "2025-01-01",
+      end_date: "2025-01-31",
+      limit: 5,
+    });
+    assert.ok(!isError, `get_player_leaderboard should not error: ${text}`);
+    assert.ok(typeof text === "string" && text.length > 0, "should return text");
+    assert.ok(text.includes("Leaderboard") || text.includes("events") || text.includes("No past events"), "should mention leaderboard or events");
+  });
+
+  it("get_player_leaderboard_by_store – invalid date range returns error", async () => {
+    const { text, isError } = await callTool("get_player_leaderboard_by_store", {
+      store_id: 4622,
+      start_date: "2026-02-01",
+      end_date: "2026-01-01",
+    });
+    assert.ok(isError, "should error when start_date is after end_date");
+    assert.ok(text.includes("start_date") || text.includes("end_date") || text.includes("before"), "message should mention dates");
+  });
+
+  it("get_player_leaderboard_by_store – valid params returns content", async () => {
+    const { text, isError } = await callTool("get_player_leaderboard_by_store", {
+      store_id: 4622,
+      start_date: "2025-01-01",
+      end_date: "2025-01-31",
+      limit: 5,
+    });
+    assert.ok(!isError, `get_player_leaderboard_by_store should not error: ${text}`);
+    assert.ok(typeof text === "string" && text.length > 0, "should return text");
+    assert.ok(
+      text.includes("Leaderboard") || text.includes("events") || text.includes("No past events") || text.includes("Store"),
+      "should mention leaderboard, events, or store"
+    );
+  });
+
+  it("get_player_leaderboard_by_store – invalid format returns error", async () => {
+    const { text, isError } = await callTool("get_player_leaderboard_by_store", {
+      store_id: 4622,
+      start_date: "2025-01-01",
+      end_date: "2025-01-31",
+      formats: ["NonExistentFormatName"],
+    });
+    assert.ok(isError, "should error for unknown format");
+    assert.ok(text.includes("Unknown format") || text.includes("list_filters"), "message should mention format or list_filters");
   });
 
   it("search_events_by_city – required only", async () => {

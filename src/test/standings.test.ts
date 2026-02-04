@@ -1,7 +1,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert";
 import { formatStandingEntry } from "../lib/formatters.js";
-import type { StandingEntry } from "../lib/types.js";
+import type { LeaderboardResult, StandingEntry } from "../lib/types.js";
 
 describe("formatStandingEntry", () => {
   it("formats entry with rank and player_name", () => {
@@ -45,5 +45,19 @@ describe("formatStandingEntry", () => {
     assert.ok(out.includes("Match points: 9"));
     assert.ok(out.includes("OMWP: 60.0%"));
     assert.ok(out.includes("GWP: 75.0%"));
+  });
+});
+
+describe("Leaderboard by store (type contract)", () => {
+  it("LeaderboardResult filters may include store for get_player_leaderboard_by_store", () => {
+    const result: LeaderboardResult = {
+      players: [],
+      eventsAnalyzed: 0,
+      eventsIncluded: [],
+      dateRange: { start: "2025-01-01", end: "2025-01-31" },
+      filters: { store: "Game Haven", categories: ["Set Championship"] },
+    };
+    assert.strictEqual(result.filters?.store, "Game Haven");
+    assert.deepStrictEqual(result.filters?.categories, ["Set Championship"]);
   });
 });

@@ -3,7 +3,15 @@
  */
 
 import { getCategoryName } from "./api.js";
-import type { Event, GameStore, RegistrationEntry, RoundMatchEntry, StandingEntry } from "./types.js";
+import type {
+  Event,
+  GameStore,
+  LeaderboardResult,
+  PlayerStats,
+  RegistrationEntry,
+  RoundMatchEntry,
+  StandingEntry,
+} from "./types.js";
 
 export function formatStore(gameStore: GameStore): string {
   const store = gameStore.store;
@@ -211,6 +219,64 @@ export function formatEvent(event: Event): string {
       lines.push(`\n🏆 Tournament rounds (use get_tournament_round_standings with round ID for standings):`);
       lines.push(roundParts.join("\n"));
     }
+  }
+
+  return lines.join("\n");
+}
+
+/** Parse record string (e.g. "3-0-1" or "4-2") to wins and losses. Returns { wins: 0, losses: 0 } if unparseable. */
+export function parseRecordToWinsLosses(record: string | undefined): { wins: number; losses: number } {
+  if (typeof record !== "string" || !record.trim()) return { wins: 0, losses: 0 };
+  const parts = record.split("-").map((s) => parseInt(s.trim(), 10));
+  if (parts.length >= 2 && !Number.isNaN(parts[0]) && !Number.isNaN(parts[1])) {
+    return { wins: parts[0], losses: parts[1] };
+  }
+  return { wins: 0, losses: 0 };
+}
+
+export function formatLeaderboardEntry(entry: PlayerStats, rank: number): string {
+  const winRate =
+    entry.totalWins + entry.totalLosses > 0
+      ? ((entry.totalWins / (entry.totalWins + entry.totalLosses)) * 100).toFixed(1)
+      : "—";
+  const avgPlace =
+    entry.placements.length > 0
+      ? (entry.placements.reduce((a, b) => a + b, 0) / entry.placements.length).toFixed(1)
+      : "—";
+  const ord = entry.bestPlacement === 1 ? "st" : entry.bestPlacement === 2 ? "nd" : entry.bestPlacement === 3 ? "rd" : "th";
+  const lines: string[] = [
+    `${rank}. ${entry.playerName}`,
+    `   Wins: ${entry.totalWins} | Losses: ${entry.totalLosses} | Events: ${entry.eventsPlayed} | Win Rate: ${winRate}%`,
+    `   Best: ${entry.bestPlacement}${ord} | Avg: ${avgPlace} | 1st places: ${entry.firstPlaceFinishes}`,
+  ];
+  return lines.join("\n");
+}
+
+export function formatLeaderboard(result: LeaderboardResult, sortLabel: string): string {
+  const lines: string[] = [];
+  const filterParts: string[] = [];
+  if (result.filters?.city) filterParts.push(`near ${result.filters.city}`);
+  if (result.filters?.store) filterParts.push(`at ${result.filters.store}`);
+  if (result.filters?.categories?.length) filterParts.push(result.filters.categories.join(", "));
+  if (result.filters?.formats?.length) filterParts.push(result.filters.formats.join(", "));
+  const filterStr = filterParts.length > 0 ? ` (${filterParts.join(" | ")})` : "";
+
+  lines.push(`Player Leaderboard${filterStr}`);
+  lines.push(
+    `Period: ${result.dateRange.start} – ${result.dateRange.end} | Events analyzed: ${result.eventsAnalyzed}`
+  );
+  lines.push("");
+  lines.push(`🏆 TOP PLAYERS BY ${sortLabel}`);
+  lines.push("");
+
+  for (let i = 0; i < result.players.length; i++) {
+    lines.push(formatLeaderboardEntry(result.players[i], i + 1));
+    lines.push("");
+  }
+
+  lines.push("Events included:");
+  for (const e of result.eventsIncluded) {
+    lines.push(`- ${e.name} (ID: ${e.id}) — ${e.startDate}`);
   }
 
   return lines.join("\n");

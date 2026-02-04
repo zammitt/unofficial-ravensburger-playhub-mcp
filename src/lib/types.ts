@@ -207,3 +207,24 @@ export interface RegistrationsResponse {
   previous_page_number: number | null;
   results: RegistrationEntry[];
 }
+
+/** Aggregated stats for one player across multiple events (leaderboard). */
+export interface PlayerStats {
+  playerName: string;
+  totalWins: number;
+  totalLosses: number;
+  eventsPlayed: number;
+  bestPlacement: number;
+  /** Number of events where the player finished 1st. */
+  firstPlaceFinishes: number;
+  placements: number[];
+}
+
+/** Result of get_player_leaderboard aggregation. */
+export interface LeaderboardResult {
+  players: PlayerStats[];
+  eventsAnalyzed: number;
+  eventsIncluded: Array<{ id: number; name: string; startDate: string }>;
+  dateRange: { start: string; end: string };
+  filters?: { city?: string; store?: string; categories?: string[]; formats?: string[] };
+}

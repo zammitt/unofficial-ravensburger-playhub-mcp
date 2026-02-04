@@ -166,6 +166,8 @@ The server exposes tools that are easy for LLMs to choose and call: descriptions
 | **get_store_events** | Events at a specific store by store ID (from search_stores). Use when the user asks about events at a particular store (e.g. "events at Game Haven"). No city or geocoding needed. |
 | **get_event_details** | Full details for one event; use when you have an event ID. For tournaments, the response includes **round IDs**. |
 | **get_event_standings** | **Event results/standings** by event ID. Use for "championship results", "who won", or "standings". The tool finds rounds and returns standings automatically—prefer over get_tournament_round_standings when the user asks for event results. |
+| **get_player_leaderboard** | **Aggregate player performance** across multiple past events in a region and date range. Use when the user asks who had the most wins, top performers, or best record over many events (e.g. "who had the most wins in set championships in January 2026 in Detroit"). Single tool call; no need to search events then call get_event_standings per event. Date range max 3 months; radius max 100 miles. Call list_filters first for valid category/format names. |
+| **get_player_leaderboard_by_store** | **Aggregate player performance** across past events at a specific store. Use when the user asks for top performers or leaderboard at a particular store (e.g. "leaderboard at Game Haven", "best players at store 123"). Get store ID from search_stores. Same date range (max 3 months), sort options, and format/category filters as get_player_leaderboard. |
 | **get_event_registrations** | Who is signed up for an event (names from API); needs event ID. |
 | **get_tournament_round_standings** | Standings for a specific round when you have a round ID (e.g. from get_event_details). |
 | **get_round_matches** | Pairings and match results for a round; needs round ID (from get_event_details). Use for "who played whom" or match results. |
@@ -173,6 +175,12 @@ The server exposes tools that are easy for LLMs to choose and call: descriptions
 | **search_stores_by_city** | Stores near a city name (e.g. "stores in Seattle"). |
 
 **Dates:** When you omit `start_date`, search uses the **start of today (UTC)** so events that already started today are included. For "today's events" pass `start_date: "YYYY-MM-DD"` with today's date (correct year).
+
+**get_player_leaderboard** and **get_player_leaderboard_by_store** can take longer when many events match (they fetch and aggregate standings for each). Use a narrow date range or category (e.g. "Set Championship") to keep results focused.
+
+### Performance – caching
+
+The server caches **completed (past) events** and their **round standings** in memory. Once an event is finished, its data does not change, so repeat lookups (e.g. the same event details or leaderboard date range) avoid extra API calls. Caches are shared across all tools and are bounded (up to 500 events, 1000 rounds) with simple eviction. Upcoming and in-progress events are never cached.
 
 ## Development
 
@@ -197,7 +205,7 @@ npm run test:coverage   # run tests with coverage report (c8)
 
 ### Tests
 
-- **Unit tests** – `api.test.ts` (API client: filter maps, fetch with mocked `fetch`, `loadFilterOptions`), `formatters.test.ts` (formatStore, formatEvent, formatStandingEntry, formatRegistrationEntry), `registrations.test.ts`, `standings.test.ts`. No network required for unit tests.
+- **Unit tests** – `api.test.ts` (API client: filter maps, strict resolution, fetch with mocked `fetch`, `loadFilterOptions`), `formatters.test.ts` (formatStore, formatEvent, formatLeaderboard, formatLeaderboardEntry, formatStandingEntry, formatRegistrationEntry), `registrations.test.ts`, `standings.test.ts`. No network required for unit tests.
 - **Integration tests** – `src/test/mcp-tools.integration.test.ts` spawns the MCP server and calls each tool (required-only, optional params, pagination). They hit the real Ravensburger Play API and Nominatim for geocoding, so **network access is required** and tests may be slower or flaky if the APIs are slow or down.
 
 Coverage is reported for `dist/` (excluding `dist/test/`). Run `npm run test:coverage` to see statement/branch/function coverage for the app code.

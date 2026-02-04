@@ -6,8 +6,19 @@ import {
   formatMatchEntry,
   formatStandingEntry,
   formatRegistrationEntry,
+  formatLeaderboardEntry,
+  formatLeaderboard,
+  parseRecordToWinsLosses,
 } from "../lib/formatters.js";
-import type { GameStore, Event, RoundMatchEntry, StandingEntry, RegistrationEntry } from "../lib/types.js";
+import type {
+  GameStore,
+  Event,
+  LeaderboardResult,
+  PlayerStats,
+  RoundMatchEntry,
+  StandingEntry,
+  RegistrationEntry,
+} from "../lib/types.js";
 
 describe("formatStore", () => {
   it("formats minimal store with name and id", () => {
@@ -375,5 +386,158 @@ describe("formatRegistrationEntry", () => {
       out.includes("Invalid Date") || out.includes("not-a-date"),
       "should show Invalid Date or raw value"
     );
+  });
+});
+
+describe("parseRecordToWinsLosses", () => {
+  it("parses W-L format", () => {
+    assert.deepStrictEqual(parseRecordToWinsLosses("3-0"), { wins: 3, losses: 0 });
+    assert.deepStrictEqual(parseRecordToWinsLosses("4-2"), { wins: 4, losses: 2 });
+    assert.deepStrictEqual(parseRecordToWinsLosses("0-3"), { wins: 0, losses: 3 });
+  });
+
+  it("parses W-L-T format (uses first two numbers)", () => {
+    assert.deepStrictEqual(parseRecordToWinsLosses("3-0-1"), { wins: 3, losses: 0 });
+    assert.deepStrictEqual(parseRecordToWinsLosses("2-1-1"), { wins: 2, losses: 1 });
+  });
+
+  it("returns zeros for undefined, empty, or unparseable", () => {
+    assert.deepStrictEqual(parseRecordToWinsLosses(undefined), { wins: 0, losses: 0 });
+    assert.deepStrictEqual(parseRecordToWinsLosses(""), { wins: 0, losses: 0 });
+    assert.deepStrictEqual(parseRecordToWinsLosses("  "), { wins: 0, losses: 0 });
+    assert.deepStrictEqual(parseRecordToWinsLosses("invalid"), { wins: 0, losses: 0 });
+    assert.deepStrictEqual(parseRecordToWinsLosses("3"), { wins: 0, losses: 0 });
+  });
+
+  it("handles spaces around dashes", () => {
+    assert.deepStrictEqual(parseRecordToWinsLosses("3 - 0 - 1"), { wins: 3, losses: 0 });
+  });
+});
+
+describe("formatLeaderboardEntry", () => {
+  it("formats entry with wins, losses, events, win rate, best and avg placement, 1st places", () => {
+    const entry: PlayerStats = {
+      playerName: "Alice",
+      totalWins: 10,
+      totalLosses: 2,
+      eventsPlayed: 3,
+      bestPlacement: 1,
+      firstPlaceFinishes: 1,
+      placements: [1, 3, 2],
+    };
+    const out = formatLeaderboardEntry(entry, 1);
+    assert.ok(out.includes("1. Alice"));
+    assert.ok(out.includes("Wins: 10"));
+    assert.ok(out.includes("Losses: 2"));
+    assert.ok(out.includes("Events: 3"));
+    assert.ok(out.includes("Win Rate: 83.3%"));
+    assert.ok(out.includes("Best: 1st"));
+    assert.ok(out.includes("Avg: 2.0"));
+    assert.ok(out.includes("1st places: 1"));
+  });
+
+  it("shows em dash for win rate when no games", () => {
+    const entry: PlayerStats = {
+      playerName: "Bob",
+      totalWins: 0,
+      totalLosses: 0,
+      eventsPlayed: 1,
+      bestPlacement: 5,
+      firstPlaceFinishes: 0,
+      placements: [5],
+    };
+    const out = formatLeaderboardEntry(entry, 2);
+    assert.ok(out.includes("Win Rate: —%"));
+  });
+
+  it("formats 2nd and 3rd placement suffixes", () => {
+    const second: PlayerStats = {
+      playerName: "Second",
+      totalWins: 0,
+      totalLosses: 0,
+      eventsPlayed: 1,
+      bestPlacement: 2,
+      firstPlaceFinishes: 0,
+      placements: [2],
+    };
+    const third: PlayerStats = {
+      playerName: "Third",
+      totalWins: 0,
+      totalLosses: 0,
+      eventsPlayed: 1,
+      bestPlacement: 3,
+      firstPlaceFinishes: 0,
+      placements: [3],
+    };
+    assert.ok(formatLeaderboardEntry(second, 1).includes("Best: 2nd"));
+    assert.ok(formatLeaderboardEntry(third, 1).includes("Best: 3rd"));
+  });
+});
+
+describe("formatLeaderboard", () => {
+  it("includes period, events analyzed, and sort label", () => {
+    const result: LeaderboardResult = {
+      players: [],
+      eventsAnalyzed: 5,
+      eventsIncluded: [],
+      dateRange: { start: "2026-01-01", end: "2026-01-31" },
+    };
+    const out = formatLeaderboard(result, "TOTAL WINS");
+    assert.ok(out.includes("Player Leaderboard"));
+    assert.ok(out.includes("2026-01-01 – 2026-01-31"));
+    assert.ok(out.includes("Events analyzed: 5"));
+    assert.ok(out.includes("TOP PLAYERS BY TOTAL WINS"));
+  });
+
+  it("includes filter context when present", () => {
+    const result: LeaderboardResult = {
+      players: [],
+      eventsAnalyzed: 0,
+      eventsIncluded: [],
+      dateRange: { start: "2026-01-01", end: "2026-01-31" },
+      filters: { city: "Detroit, MI", categories: ["Set Championship"] },
+    };
+    const out = formatLeaderboard(result, "TOTAL WINS");
+    assert.ok(out.includes("near Detroit, MI"));
+    assert.ok(out.includes("Set Championship"));
+  });
+
+  it("includes store in filter context when present", () => {
+    const result: LeaderboardResult = {
+      players: [],
+      eventsAnalyzed: 0,
+      eventsIncluded: [],
+      dateRange: { start: "2026-01-01", end: "2026-01-31" },
+      filters: { store: "Game Haven", formats: ["Constructed"] },
+    };
+    const out = formatLeaderboard(result, "TOTAL WINS");
+    assert.ok(out.includes("at Game Haven"));
+    assert.ok(out.includes("Constructed"));
+  });
+
+  it("lists events included", () => {
+    const result: LeaderboardResult = {
+      players: [
+        {
+          playerName: "Alice",
+          totalWins: 3,
+          totalLosses: 0,
+          eventsPlayed: 1,
+          bestPlacement: 1,
+          firstPlaceFinishes: 1,
+          placements: [1],
+        },
+      ],
+      eventsAnalyzed: 1,
+      eventsIncluded: [
+        { id: 100, name: "Championship Jan 5", startDate: "2026-01-05T18:00:00Z" },
+      ],
+      dateRange: { start: "2026-01-01", end: "2026-01-31" },
+    };
+    const out = formatLeaderboard(result, "TOTAL WINS");
+    assert.ok(out.includes("1. Alice"));
+    assert.ok(out.includes("Events included:"));
+    assert.ok(out.includes("Championship Jan 5"));
+    assert.ok(out.includes("ID: 100"));
   });
 });
