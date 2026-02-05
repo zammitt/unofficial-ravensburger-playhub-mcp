@@ -4,8 +4,10 @@ An **MCP (Model Context Protocol) server** that lets AI assistants look up **Dis
 
 ## What you need
 
-- **Node.js** 18+ (for `node --test` and ESM)
+- **Node.js** 20.x (development/tests are pinned to Node 20 via `.nvmrc`)
 - **npm** (comes with Node)
+
+Tip: run `nvm use` in this repo to load the pinned Node version.
 
 No API keys or configuration are required. Event and store search work out of the box.
 
@@ -187,12 +189,17 @@ The server caches **completed (past) events** and their **round standings** in m
 ```bash
 npm install
 npm run build   # compile TypeScript to dist/
-npm test        # run all tests from dist/ (unit + integration); run build first
-npm run test:coverage   # run tests with coverage report (c8)
+npm test        # run unit tests from dist/; run build first
+npm run test:integration   # run live integration tests (requires network)
+npm run test:all           # unit + integration
+npm run test:coverage      # unit test coverage report (c8)
+npm run test:coverage:all  # coverage including integration tests
 ```
 
 - **`npm run dev`** – Run the server with `tsx` (no build step) for quick iteration.
 - **`npm start`** – Run the compiled server: `node dist/index.js`.
+- **Verbose API logs (optional)** – Set `LORCANA_MCP_DEBUG=1` to print request/response debug lines for event search.
+  Example: `LORCANA_MCP_DEBUG=1 npm run dev`
 
 ### Project structure
 
@@ -205,8 +212,9 @@ npm run test:coverage   # run tests with coverage report (c8)
 
 ### Tests
 
-- **Unit tests** – `api.test.ts` (API client: filter maps, strict resolution, fetch with mocked `fetch`, `loadFilterOptions`), `formatters.test.ts` (formatStore, formatEvent, formatLeaderboard, formatLeaderboardEntry, formatStandingEntry, formatRegistrationEntry), `registrations.test.ts`, `standings.test.ts`. No network required for unit tests.
-- **Integration tests** – `src/test/mcp-tools.integration.test.ts` spawns the MCP server and calls each tool (required-only, optional params, pagination). They hit the real Ravensburger Play API and Nominatim for geocoding, so **network access is required** and tests may be slower or flaky if the APIs are slow or down.
+- **Unit tests** – `api.test.ts` (API client: filter maps, strict resolution, fetch with mocked `fetch`, `loadFilterOptions`), `formatters.test.ts` (formatStore, formatEvent, formatLeaderboard, formatLeaderboardEntry, formatStandingEntry, formatRegistrationEntry), `http.test.ts` (retry/backoff helpers), `registrations.test.ts`, `standings.test.ts`. No network required for unit tests (`npm test`).
+- **Integration tests** – `src/test/mcp-tools.integration.test.ts` spawns the MCP server and calls each tool (required-only, optional params, pagination). They hit the real Ravensburger Play API and Nominatim for geocoding, so **network access is required** and tests may be slower or flaky if the APIs are slow or down (`npm run test:integration`).
+  You can increase the suite timeout with `INTEGRATION_TEST_TIMEOUT_MS`, e.g. `INTEGRATION_TEST_TIMEOUT_MS=180000 npm run test:integration`.
 
 Coverage is reported for `dist/` (excluding `dist/test/`). Run `npm run test:coverage` to see statement/branch/function coverage for the app code.
 

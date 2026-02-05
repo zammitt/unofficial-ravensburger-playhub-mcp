@@ -37,7 +37,12 @@ const EXPECTED_TOOL_NAMES = [
 
 type ToolName = (typeof EXPECTED_TOOL_NAMES)[number];
 
-describe("MCP server integration – all tools and call variations", { timeout: 60_000 }, () => {
+const parsedIntegrationTimeoutMs = Number.parseInt(process.env.INTEGRATION_TEST_TIMEOUT_MS ?? "", 10);
+const INTEGRATION_TIMEOUT_MS = Number.isFinite(parsedIntegrationTimeoutMs) && parsedIntegrationTimeoutMs > 0
+  ? parsedIntegrationTimeoutMs
+  : 180_000;
+
+describe("MCP server integration – all tools and call variations", { timeout: INTEGRATION_TIMEOUT_MS }, () => {
   let client: InstanceType<typeof Client>;
   let transport: InstanceType<typeof StdioClientTransport>;
 
@@ -161,6 +166,26 @@ describe("MCP server integration – all tools and call variations", { timeout: 
     });
     assert.ok(!isError, `search_events (start_date) should not error: ${text}`);
     assert.ok(typeof text === "string", "should return text");
+  });
+
+  it("search_events – invalid date returns error", async () => {
+    const { text, isError } = await callTool("search_events", {
+      latitude: 42.33,
+      longitude: -83.05,
+      start_date: "2026-13-40",
+    });
+    assert.ok(isError, "should error for invalid date");
+    assert.ok(text.includes("YYYY-MM-DD"), "message should mention date format");
+  });
+
+  it("search_events – invalid format returns error", async () => {
+    const { text, isError } = await callTool("search_events", {
+      latitude: 42.33,
+      longitude: -83.05,
+      formats: ["NonExistentFormatName"],
+    });
+    assert.ok(isError, "should error for unknown format");
+    assert.ok(text.includes("Unknown format") || text.includes("list_filters"), "message should mention format or list_filters");
   });
 
   it("get_event_details – valid-looking id", async () => {
@@ -312,6 +337,15 @@ describe("MCP server integration – all tools and call variations", { timeout: 
     assert.ok(typeof text === "string", "should return text");
   });
 
+  it("search_events_by_city – invalid date returns error", async () => {
+    const { text, isError } = await callTool("search_events_by_city", {
+      city: "Detroit, MI",
+      start_date: "bad-date",
+    });
+    assert.ok(isError, "should error for invalid date");
+    assert.ok(text.includes("YYYY-MM-DD"), "message should mention date format");
+  });
+
   it("get_store_events – required only", async () => {
     // Use a known store ID for testing
     const { text, isError } = await callTool("get_store_events", {
@@ -330,6 +364,15 @@ describe("MCP server integration – all tools and call variations", { timeout: 
     });
     assert.ok(!isError, `get_store_events (optional) should not error: ${text}`);
     assert.ok(typeof text === "string", "should return text");
+  });
+
+  it("get_store_events – invalid category returns error", async () => {
+    const { text, isError } = await callTool("get_store_events", {
+      store_id: 4622,
+      categories: ["NonExistentCategoryName"],
+    });
+    assert.ok(isError, "should error for unknown category");
+    assert.ok(text.includes("Unknown category") || text.includes("list_filters"), "message should mention category or list_filters");
   });
 
   it("search_stores – no args (list first page)", async () => {

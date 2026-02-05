@@ -12,9 +12,7 @@ import {
   fetchEvents,
   fetchTournamentRoundMatches,
   fetchTournamentRoundStandings,
-  resolveCategoryIds,
   resolveCategoryIdsStrict,
-  resolveFormatIds,
   resolveFormatIdsStrict,
   STATUSES,
 } from "../lib/api.js";
@@ -27,6 +25,62 @@ import {
   parseRecordToWinsLosses,
 } from "../lib/formatters.js";
 import type { LeaderboardResult, PlayerStats, StandingEntry } from "../lib/types.js";
+import { fetchWithRetry } from "../lib/http.js";
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+const DATE_ONLY_RE = /^(\d{4})-(\d{2})-(\d{2})$/;
+const INVALID_DATE_ERROR = "Dates must be valid YYYY-MM-DD.";
+
+function parseDateOnlyUtc(date: string): Date | null {
+  const match = DATE_ONLY_RE.exec(date);
+  if (!match) return null;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const parsed = new Date(Date.UTC(year, month - 1, day));
+  if (
+    parsed.getUTCFullYear() !== year ||
+    parsed.getUTCMonth() !== month - 1 ||
+    parsed.getUTCDate() !== day
+  ) {
+    return null;
+  }
+  return parsed;
+}
+
+function startOfTodayUtcIso(): string {
+  const now = new Date();
+  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())).toISOString();
+}
+
+function parseSearchDateRange(
+  startDate?: string,
+  endDate?: string
+): { startDateAfter: string; startDateBefore?: string; error?: string } {
+  const start = startDate ? parseDateOnlyUtc(startDate) : null;
+  if (startDate && !start) {
+    return { startDateAfter: "", error: INVALID_DATE_ERROR };
+  }
+  const startDateAfter = start ? start.toISOString() : startOfTodayUtcIso();
+
+  if (!endDate) {
+    return { startDateAfter };
+  }
+  const end = parseDateOnlyUtc(endDate);
+  if (!end) {
+    return { startDateAfter: "", error: INVALID_DATE_ERROR };
+  }
+  if (start && start > end) {
+    return { startDateAfter: "", error: "start_date must be on or before end_date." };
+  }
+
+  // API expects an exclusive upper bound; add one day so end_date is inclusive for users.
+  const endExclusive = new Date(end.getTime() + DAY_MS);
+  return {
+    startDateAfter,
+    startDateBefore: endExclusive.toISOString(),
+  };
+}
 
 export function registerEventTools(server: McpServer): void {
   // Tool: Search Events
@@ -40,7 +94,7 @@ export function registerEventTools(server: McpServer): void {
         longitude: z.number().describe("Longitude of the search center (e.g. -83.05)"),
         radius_miles: z.number().default(25).describe("Search radius in miles (default: 25)"),
         start_date: z.string().optional().describe("Only show events starting on or after this date in UTC (YYYY-MM-DD)"),
-        end_date: z.string().optional().describe("Only show events starting before this date in UTC (YYYY-MM-DD)"),
+        end_date: z.string().optional().describe("Only show events starting on or before this date in UTC (YYYY-MM-DD, inclusive)"),
         formats: z.array(z.string()).optional().describe("Filter by format names; get exact names from list_filters (e.g. ['Constructed'])"),
         categories: z.array(z.string()).optional().describe("Filter by category names; get exact names from list_filters"),
         statuses: z.array(z.enum(STATUSES)).default(["upcoming", "inProgress"]).describe("Include: upcoming, inProgress (live), past, or all (all three)"),
@@ -52,43 +106,53 @@ export function registerEventTools(server: McpServer): void {
       },
     },
     async (args) => {
+      const effectivePageSize = Math.min(args.page_size, 100);
+      const dateRange = parseSearchDateRange(args.start_date, args.end_date);
+      if (dateRange.error) {
+        return {
+          content: [{ type: "text" as const, text: dateRange.error }],
+          isError: true,
+        };
+      }
+
+      let formatIds: string[] | undefined;
+      if (args.formats?.length) {
+        try {
+          formatIds = resolveFormatIdsStrict(args.formats);
+        } catch (e) {
+          return {
+            content: [{ type: "text" as const, text: e instanceof Error ? e.message : String(e) }],
+            isError: true,
+          };
+        }
+      }
+
+      let categoryIds: string[] | undefined;
+      if (args.categories?.length) {
+        try {
+          categoryIds = resolveCategoryIdsStrict(args.categories);
+        } catch (e) {
+          return {
+            content: [{ type: "text" as const, text: e instanceof Error ? e.message : String(e) }],
+            isError: true,
+          };
+        }
+      }
+
       const params: Record<string, string | string[]> = {
         game_slug: "disney-lorcana",
         latitude: args.latitude.toString(),
         longitude: args.longitude.toString(),
         num_miles: args.radius_miles.toString(),
         page: args.page.toString(),
-        page_size: Math.min(args.page_size, 100).toString(),
+        page_size: effectivePageSize.toString(),
       };
 
       params.display_statuses = expandStatusesForApi(args.statuses as string[]);
-
-      if (args.start_date) {
-        params.start_date_after = new Date(args.start_date + "T00:00:00Z").toISOString();
-      } else {
-        // Default to start of today (UTC)
-        const now = new Date();
-        const startOfToday = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
-        params.start_date_after = startOfToday.toISOString();
-      }
-
-      if (args.end_date) {
-        params.start_date_before = new Date(args.end_date + "T00:00:00Z").toISOString();
-      }
-
-      if (args.formats && args.formats.length > 0) {
-        const formatIds = resolveFormatIds(args.formats);
-        if (formatIds.length > 0) {
-          params.gameplay_format_id = formatIds;
-        }
-      }
-
-      if (args.categories && args.categories.length > 0) {
-        const categoryIds = resolveCategoryIds(args.categories);
-        if (categoryIds.length > 0) {
-          params.event_configuration_template_id = categoryIds;
-        }
-      }
+      params.start_date_after = dateRange.startDateAfter;
+      if (dateRange.startDateBefore) params.start_date_before = dateRange.startDateBefore;
+      if (formatIds) params.gameplay_format_id = formatIds;
+      if (categoryIds) params.event_configuration_template_id = categoryIds;
 
       if (args.featured_only) {
         params.is_headlining_event = "true";
@@ -117,7 +181,7 @@ export function registerEventTools(server: McpServer): void {
         }
 
         const formattedEvents = response.results.map(formatEvent).join("\n\n---\n\n");
-        const summary = `Found ${response.count} event(s). Showing ${response.results.length} (page ${args.page} of ${Math.ceil(response.count / args.page_size)}).`;
+        const summary = `Found ${response.count} event(s). Showing ${response.results.length} (page ${args.page} of ${Math.ceil(response.count / effectivePageSize)}).`;
 
         return {
           content: [
@@ -318,19 +382,26 @@ export function registerEventTools(server: McpServer): void {
           };
         }
 
-        const allRounds: { id: number; round_number: number; phase_name?: string }[] = [];
-        for (const phase of phases) {
+        const allRounds: { id: number; round_number: number; phase_name?: string; phase_index: number }[] = [];
+        for (let phaseIndex = 0; phaseIndex < phases.length; phaseIndex++) {
+          const phase = phases[phaseIndex];
           if (!phase.rounds?.length) continue;
           for (const r of phase.rounds) {
             allRounds.push({
               id: r.id,
               round_number: r.round_number,
               phase_name: phase.phase_name,
+              phase_index: phaseIndex,
             });
           }
         }
-        // Try newest round first (highest round_number) so we return current/latest standings
-        allRounds.sort((a, b) => b.round_number - a.round_number);
+        // Prefer newest phase first, then highest round number within phase.
+        allRounds.sort(
+          (a, b) =>
+            b.phase_index - a.phase_index ||
+            b.round_number - a.round_number ||
+            b.id - a.id
+        );
 
         if (allRounds.length === 0) {
           return {
@@ -457,7 +528,7 @@ export function registerEventTools(server: McpServer): void {
         city: z.string().describe("City name, ideally with state/country (e.g. 'Detroit, MI' or 'New York, NY')"),
         radius_miles: z.number().default(25).describe("Search radius in miles (default: 25)"),
         start_date: z.string().optional().describe("Only show events starting on or after this date in UTC (YYYY-MM-DD)"),
-        end_date: z.string().optional().describe("Only show events starting before this date in UTC (YYYY-MM-DD)"),
+        end_date: z.string().optional().describe("Only show events starting on or before this date in UTC (YYYY-MM-DD, inclusive)"),
         formats: z.array(z.string()).optional().describe("Filter by format names from list_filters (e.g. ['Constructed'])"),
         categories: z.array(z.string()).optional().describe("Filter by category names from list_filters"),
         statuses: z.array(z.enum(STATUSES)).default(["upcoming", "inProgress"]).describe("Include: upcoming, inProgress (live), past, or all (all three)"),
@@ -469,10 +540,43 @@ export function registerEventTools(server: McpServer): void {
       },
     },
     async (args) => {
+      const effectivePageSize = Math.min(args.page_size, 100);
       const geocodeUrl = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(args.city)}&format=json&limit=1`;
 
       try {
-        const geoResponse = await fetch(geocodeUrl, {
+        const dateRange = parseSearchDateRange(args.start_date, args.end_date);
+        if (dateRange.error) {
+          return {
+            content: [{ type: "text" as const, text: dateRange.error }],
+            isError: true,
+          };
+        }
+
+        let formatIds: string[] | undefined;
+        if (args.formats?.length) {
+          try {
+            formatIds = resolveFormatIdsStrict(args.formats);
+          } catch (e) {
+            return {
+              content: [{ type: "text" as const, text: e instanceof Error ? e.message : String(e) }],
+              isError: true,
+            };
+          }
+        }
+
+        let categoryIds: string[] | undefined;
+        if (args.categories?.length) {
+          try {
+            categoryIds = resolveCategoryIdsStrict(args.categories);
+          } catch (e) {
+            return {
+              content: [{ type: "text" as const, text: e instanceof Error ? e.message : String(e) }],
+              isError: true,
+            };
+          }
+        }
+
+        const geoResponse = await fetchWithRetry(geocodeUrl, {
           headers: {
             "User-Agent": "lorcana-event-finder/1.0",
           },
@@ -504,13 +608,6 @@ export function registerEventTools(server: McpServer): void {
         const latitude = parseFloat(location.lat);
         const longitude = parseFloat(location.lon);
 
-        const startDateAfter = args.start_date
-          ? new Date(args.start_date + "T00:00:00Z").toISOString()
-          : (() => {
-              const now = new Date();
-              return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())).toISOString();
-            })();
-
         const params: Record<string, string | string[]> = {
           game_slug: "disney-lorcana",
           latitude: latitude.toString(),
@@ -518,27 +615,14 @@ export function registerEventTools(server: McpServer): void {
           num_miles: args.radius_miles.toString(),
           display_statuses: expandStatusesForApi(args.statuses as string[]),
           page: args.page.toString(),
-          page_size: Math.min(args.page_size, 100).toString(),
-          start_date_after: startDateAfter,
+          page_size: effectivePageSize.toString(),
+          start_date_after: dateRange.startDateAfter,
         };
 
-        if (args.end_date) {
-          params.start_date_before = new Date(args.end_date + "T00:00:00Z").toISOString();
-        }
+        if (dateRange.startDateBefore) params.start_date_before = dateRange.startDateBefore;
 
-        if (args.formats && args.formats.length > 0) {
-          const formatIds = resolveFormatIds(args.formats);
-          if (formatIds.length > 0) {
-            params.gameplay_format_id = formatIds;
-          }
-        }
-
-        if (args.categories && args.categories.length > 0) {
-          const categoryIds = resolveCategoryIds(args.categories);
-          if (categoryIds.length > 0) {
-            params.event_configuration_template_id = categoryIds;
-          }
-        }
+        if (formatIds) params.gameplay_format_id = formatIds;
+        if (categoryIds) params.event_configuration_template_id = categoryIds;
 
         if (args.featured_only) {
           params.is_headlining_event = "true";
@@ -566,7 +650,7 @@ export function registerEventTools(server: McpServer): void {
         }
 
         const formattedEvents = response.results.map(formatEvent).join("\n\n---\n\n");
-        const summary = `Found ${response.count} event(s) near ${location.display_name}. Showing ${response.results.length} (page ${args.page} of ${Math.ceil(response.count / args.page_size)}).`;
+        const summary = `Found ${response.count} event(s) near ${location.display_name}. Showing ${response.results.length} (page ${args.page} of ${Math.ceil(response.count / effectivePageSize)}).`;
 
         return {
           content: [
@@ -599,7 +683,7 @@ export function registerEventTools(server: McpServer): void {
       inputSchema: {
         store_id: z.number().describe("Store ID (from search_stores)"),
         start_date: z.string().optional().describe("Only show events starting on or after this date in UTC (YYYY-MM-DD)"),
-        end_date: z.string().optional().describe("Only show events starting before this date in UTC (YYYY-MM-DD)"),
+        end_date: z.string().optional().describe("Only show events starting on or before this date in UTC (YYYY-MM-DD, inclusive)"),
         formats: z.array(z.string()).optional().describe("Filter by format names from list_filters (e.g. ['Constructed'])"),
         categories: z.array(z.string()).optional().describe("Filter by category names from list_filters"),
         statuses: z.array(z.enum(STATUSES)).default(["all"]).describe("Include: upcoming, inProgress (live), past, or all (all three)"),
@@ -609,15 +693,42 @@ export function registerEventTools(server: McpServer): void {
     },
     async (args) => {
       try {
+        const effectivePageSize = Math.min(args.page_size, 100);
+        const dateRange = parseSearchDateRange(args.start_date, args.end_date);
+        if (dateRange.error) {
+          return {
+            content: [{ type: "text" as const, text: dateRange.error }],
+            isError: true,
+          };
+        }
+
+        let formatIds: string[] | undefined;
+        if (args.formats?.length) {
+          try {
+            formatIds = resolveFormatIdsStrict(args.formats);
+          } catch (e) {
+            return {
+              content: [{ type: "text" as const, text: e instanceof Error ? e.message : String(e) }],
+              isError: true,
+            };
+          }
+        }
+
+        let categoryIds: string[] | undefined;
+        if (args.categories?.length) {
+          try {
+            categoryIds = resolveCategoryIdsStrict(args.categories);
+          } catch (e) {
+            return {
+              content: [{ type: "text" as const, text: e instanceof Error ? e.message : String(e) }],
+              isError: true,
+            };
+          }
+        }
+
         // API requires lat/long + radius; use global center + Earth-covering radius
         // so store= filter returns that store's events regardless of region
         let storeName = `Store ${args.store_id}`;
-        const startDateAfter = args.start_date
-          ? new Date(args.start_date + "T00:00:00Z").toISOString()
-          : (() => {
-              const now = new Date();
-              return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())).toISOString();
-            })();
 
         const params: Record<string, string | string[]> = {
           game_slug: "disney-lorcana",
@@ -627,27 +738,14 @@ export function registerEventTools(server: McpServer): void {
           display_statuses: expandStatusesForApi(args.statuses as string[]),
           store: args.store_id.toString(),
           page: args.page.toString(),
-          page_size: Math.min(args.page_size, 100).toString(),
-          start_date_after: startDateAfter,
+          page_size: effectivePageSize.toString(),
+          start_date_after: dateRange.startDateAfter,
         };
 
-        if (args.end_date) {
-          params.start_date_before = new Date(args.end_date + "T00:00:00Z").toISOString();
-        }
+        if (dateRange.startDateBefore) params.start_date_before = dateRange.startDateBefore;
 
-        if (args.formats && args.formats.length > 0) {
-          const formatIds = resolveFormatIds(args.formats);
-          if (formatIds.length > 0) {
-            params.gameplay_format_id = formatIds;
-          }
-        }
-
-        if (args.categories && args.categories.length > 0) {
-          const categoryIds = resolveCategoryIds(args.categories);
-          if (categoryIds.length > 0) {
-            params.event_configuration_template_id = categoryIds;
-          }
-        }
+        if (formatIds) params.gameplay_format_id = formatIds;
+        if (categoryIds) params.event_configuration_template_id = categoryIds;
 
         const response = await fetchEvents(params);
 
@@ -668,7 +766,7 @@ export function registerEventTools(server: McpServer): void {
         }
 
         const formattedEvents = response.results.map(formatEvent).join("\n\n---\n\n");
-        const summary = `Found ${response.count} event(s) at ${storeName}. Showing ${response.results.length} (page ${args.page} of ${Math.ceil(response.count / args.page_size)}).`;
+        const summary = `Found ${response.count} event(s) at ${storeName}. Showing ${response.results.length} (page ${args.page} of ${Math.ceil(response.count / effectivePageSize)}).`;
 
         return {
           content: [
@@ -773,11 +871,11 @@ export function registerEventTools(server: McpServer): void {
           };
         }
 
-        const start = new Date(args.start_date + "T00:00:00Z");
-        const end = new Date(args.end_date + "T00:00:00Z");
-        if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+        const start = parseDateOnlyUtc(args.start_date);
+        const end = parseDateOnlyUtc(args.end_date);
+        if (!start || !end) {
           return {
-            content: [{ type: "text" as const, text: "Dates must be valid YYYY-MM-DD." }],
+            content: [{ type: "text" as const, text: INVALID_DATE_ERROR }],
             isError: true,
           };
         }
@@ -787,13 +885,14 @@ export function registerEventTools(server: McpServer): void {
             isError: true,
           };
         }
-        const daysDiff = Math.round((end.getTime() - start.getTime()) / (24 * 60 * 60 * 1000));
+        const daysDiff = Math.floor((end.getTime() - start.getTime()) / DAY_MS);
         if (daysDiff > MAX_DATE_RANGE_DAYS) {
           return {
             content: [{ type: "text" as const, text: `Date range cannot exceed ${MAX_DATE_RANGE_DAYS} days (about 3 months).` }],
             isError: true,
           };
         }
+        const endExclusive = new Date(end.getTime() + DAY_MS);
 
         const radius = Math.min(MAX_RADIUS_MILES, Math.max(0, args.radius_miles));
         const limit = Math.min(MAX_LEADERBOARD_LIMIT, Math.max(1, args.limit));
@@ -821,7 +920,7 @@ export function registerEventTools(server: McpServer): void {
         }
 
         const geocodeUrl = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(cityTrimmed)}&format=json&limit=1`;
-        const geoResponse = await fetch(geocodeUrl, {
+        const geoResponse = await fetchWithRetry(geocodeUrl, {
           headers: { "User-Agent": "lorcana-event-finder/1.0" },
         });
         if (!geoResponse.ok) {
@@ -848,7 +947,7 @@ export function registerEventTools(server: McpServer): void {
           num_miles: radius.toString(),
           display_statuses: ["past", "inProgress"],
           start_date_after: start.toISOString(),
-          start_date_before: end.toISOString(),
+          start_date_before: endExclusive.toISOString(),
           page: "1",
           page_size: "100",
         };
@@ -1033,11 +1132,11 @@ export function registerEventTools(server: McpServer): void {
     },
     async (args) => {
       try {
-        const start = new Date(args.start_date + "T00:00:00Z");
-        const end = new Date(args.end_date + "T00:00:00Z");
-        if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+        const start = parseDateOnlyUtc(args.start_date);
+        const end = parseDateOnlyUtc(args.end_date);
+        if (!start || !end) {
           return {
-            content: [{ type: "text" as const, text: "Dates must be valid YYYY-MM-DD." }],
+            content: [{ type: "text" as const, text: INVALID_DATE_ERROR }],
             isError: true,
           };
         }
@@ -1047,13 +1146,14 @@ export function registerEventTools(server: McpServer): void {
             isError: true,
           };
         }
-        const daysDiff = Math.round((end.getTime() - start.getTime()) / (24 * 60 * 60 * 1000));
+        const daysDiff = Math.floor((end.getTime() - start.getTime()) / DAY_MS);
         if (daysDiff > MAX_DATE_RANGE_DAYS) {
           return {
             content: [{ type: "text" as const, text: `Date range cannot exceed ${MAX_DATE_RANGE_DAYS} days (about 3 months).` }],
             isError: true,
           };
         }
+        const endExclusive = new Date(end.getTime() + DAY_MS);
 
         const limit = Math.min(MAX_LEADERBOARD_LIMIT, Math.max(1, args.limit));
         const minEvents = Math.max(1, args.min_events);
@@ -1087,7 +1187,7 @@ export function registerEventTools(server: McpServer): void {
           display_statuses: ["past", "inProgress"],
           store: args.store_id.toString(),
           start_date_after: start.toISOString(),
-          start_date_before: end.toISOString(),
+          start_date_before: endExclusive.toISOString(),
           page: "1",
           page_size: "100",
         };

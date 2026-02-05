@@ -5,6 +5,7 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { fetchStores } from "../lib/api.js";
+import { fetchWithRetry } from "../lib/http.js";
 import { formatStore } from "../lib/formatters.js";
 
 export function registerStoreTools(server: McpServer): void {
@@ -95,7 +96,7 @@ export function registerStoreTools(server: McpServer): void {
       const geocodeUrl = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(args.city)}&format=json&limit=1`;
 
       try {
-        const geoResponse = await fetch(geocodeUrl, {
+        const geoResponse = await fetchWithRetry(geocodeUrl, {
           headers: { "User-Agent": "lorcana-event-finder/1.0" },
         });
 

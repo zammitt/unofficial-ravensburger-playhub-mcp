@@ -8,11 +8,16 @@
     "unofficial-ravensburger-playhub-mcp": "dist/index.js"
   },
   "scripts": {
-    "build": "rm -rf dist && tsc",
+    "check:node": "node scripts/ensure-node20.mjs",
+    "build": "npm run check:node && rm -rf dist && tsc",
     "start": "node dist/index.js",
-    "dev": "tsx src/index.ts",
-    "test": "node --test dist",
-    "test:coverage": "c8 --exclude='**/test/**' --reporter=text --reporter=lcov node --test dist",
+    "dev": "npm run check:node && tsx src/index.ts",
+    "test": "npm run check:node && npm run test:unit",
+    "test:unit": "node --test dist/test/api.test.js dist/test/formatters.test.js dist/test/http.test.js dist/test/registrations.test.js dist/test/standings.test.js",
+    "test:integration": "npm run check:node && node --test dist/test/mcp-tools.integration.test.js",
+    "test:all": "npm run test && npm run test:integration",
+    "test:coverage": "npm run check:node && c8 --exclude='**/test/**' --reporter=text --reporter=lcov node --test dist/test/api.test.js dist/test/formatters.test.js dist/test/http.test.js dist/test/registrations.test.js dist/test/standings.test.js",
+    "test:coverage:all": "npm run check:node && c8 --exclude='**/test/**' --reporter=text --reporter=lcov node --test dist",
     "prepublishOnly": "npm run build"
   },
   "keywords": [
@@ -24,7 +29,7 @@
   "author": "",
   "license": "Unlicense",
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=20.0.0"
   },
   "repository": {
     "type": "git",

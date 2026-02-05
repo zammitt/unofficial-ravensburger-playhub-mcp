@@ -14,8 +14,16 @@ import type {
   StandingsResponse,
   StoresResponse,
 } from "./types.js";
+import { fetchWithRetry } from "./http.js";
 
 const API_BASE = "https://api.cloudflare.ravensburgerplay.com/hydraproxy/api/v2";
+const DEBUG_API_LOGGING = /^(1|true|yes|on)$/i.test(process.env.LORCANA_MCP_DEBUG ?? "");
+
+function debugApiLog(message: string): void {
+  if (DEBUG_API_LOGGING) {
+    console.error(message);
+  }
+}
 
 /** Event statuses for tool schema. "all" expands to upcoming, inProgress, past when calling the API. */
 export const STATUSES = ["upcoming", "inProgress", "past", "all"] as const;
@@ -111,7 +119,7 @@ export function updateFilterMaps(formats: GameplayFormat[], categories: EventCat
 
 export async function fetchGameplayFormats(): Promise<GameplayFormat[]> {
   const url = `${API_BASE}/gameplay-formats/?game_slug=disney-lorcana`;
-  const response = await fetch(url, {
+  const response = await fetchWithRetry(url, {
     headers: { Referer: "https://tcg.ravensburgerplay.com/" },
   });
   if (!response.ok) throw new Error("Failed to fetch formats");
@@ -120,7 +128,7 @@ export async function fetchGameplayFormats(): Promise<GameplayFormat[]> {
 
 export async function fetchCategories(): Promise<EventCategory[]> {
   const url = `${API_BASE}/event-configuration-templates/?game_slug=disney-lorcana`;
-  const response = await fetch(url, {
+  const response = await fetchWithRetry(url, {
     headers: { Referer: "https://tcg.ravensburgerplay.com/" },
   });
   if (!response.ok) throw new Error("Failed to fetch categories");
@@ -138,10 +146,10 @@ export async function fetchEvents(params: Record<string, string | string[]>): Pr
     }
   }
 
-  console.error(`[fetchEvents] URL: ${url.toString()}`);
-  console.error(`[fetchEvents] Params: ${JSON.stringify(params)}`);
+  debugApiLog(`[fetchEvents] URL: ${url.toString()}`);
+  debugApiLog(`[fetchEvents] Params: ${JSON.stringify(params)}`);
 
-  const response = await fetch(url.toString(), {
+  const response = await fetchWithRetry(url.toString(), {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
@@ -155,7 +163,7 @@ export async function fetchEvents(params: Record<string, string | string[]>): Pr
   }
 
   const data = await response.json() as EventsResponse;
-  console.error(`[fetchEvents] Response: count=${data.count}, results=${data.results?.length ?? 0}`);
+  debugApiLog(`[fetchEvents] Response: count=${data.count}, results=${data.results?.length ?? 0}`);
   return data;
 }
 
@@ -168,7 +176,7 @@ export async function fetchEventDetails(eventId: number): Promise<Event> {
 
   const url = `${API_BASE}/events/${eventId}/`;
 
-  const response = await fetch(url, {
+  const response = await fetchWithRetry(url, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
@@ -201,7 +209,7 @@ export async function fetchEventRegistrations(
   url.searchParams.set("page", page.toString());
   url.searchParams.set("page_size", pageSize.toString());
 
-  const response = await fetch(url.toString(), {
+  const response = await fetchWithRetry(url.toString(), {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
@@ -226,7 +234,7 @@ export async function fetchTournamentRoundStandings(
   url.searchParams.set("page", page.toString());
   url.searchParams.set("page_size", pageSize.toString());
 
-  const response = await fetch(url.toString(), {
+  const response = await fetchWithRetry(url.toString(), {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
@@ -251,7 +259,7 @@ export async function fetchTournamentRoundMatches(
   url.searchParams.set("page", page.toString());
   url.searchParams.set("page_size", pageSize.toString());
 
-  const response = await fetch(url.toString(), {
+  const response = await fetchWithRetry(url.toString(), {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
@@ -277,7 +285,7 @@ export async function fetchStores(params: Record<string, string>): Promise<Store
     }
   }
 
-  const response = await fetch(url.toString(), {
+  const response = await fetchWithRetry(url.toString(), {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
@@ -400,14 +408,21 @@ export async function getEventStandings(eventId: number): Promise<{ event: Event
 
   // Only pass true for completed (past) events so we aggressively cache round standings for them and never for in-progress/future
   const isPast = isEventCompleted(event);
-  const allRounds: { id: number; round_number: number }[] = [];
-  for (const phase of phases) {
+  const allRounds: { id: number; round_number: number; phase_index: number }[] = [];
+  for (let phaseIndex = 0; phaseIndex < phases.length; phaseIndex++) {
+    const phase = phases[phaseIndex];
     if (!phase.rounds?.length) continue;
     for (const r of phase.rounds) {
-      allRounds.push({ id: r.id, round_number: r.round_number });
+      allRounds.push({ id: r.id, round_number: r.round_number, phase_index: phaseIndex });
     }
   }
-  allRounds.sort((a, b) => b.round_number - a.round_number);
+  // Prefer newest phase first, then highest round number within phase.
+  allRounds.sort(
+    (a, b) =>
+      b.phase_index - a.phase_index ||
+      b.round_number - a.round_number ||
+      b.id - a.id
+  );
 
   for (const round of allRounds) {
     try {
