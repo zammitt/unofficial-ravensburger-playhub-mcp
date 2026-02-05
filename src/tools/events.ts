@@ -698,7 +698,31 @@ export function registerEventTools(server: McpServer): void {
   const MAX_LEADERBOARD_LIMIT = 100;
   const SORT_OPTIONS = ["total_wins", "events_played", "win_rate", "best_placement"] as const;
 
-  function standingPlayerName(entry: StandingEntry): string {
+  /**
+   * Stable key for aggregating a player across events.
+   * Uses player.id when available (most stable), otherwise falls back to player.best_identifier.
+   * Does NOT use user_event_status.best_identifier since that can vary per-event.
+   */
+  function standingPlayerKey(entry: StandingEntry): string {
+    // Prefer player.id as the most stable identifier
+    if (entry.player?.id !== undefined && entry.player.id !== null) {
+      return `player_id:${entry.player.id}`;
+    }
+    // Fall back to player.best_identifier (first name + last initial, stable across events)
+    return (
+      entry.player?.best_identifier ??
+      entry.player_name ??
+      entry.display_name ??
+      entry.username ??
+      "—"
+    );
+  }
+
+  /**
+   * Best display name for a player (for output/formatting).
+   * Prefers user_event_status.best_identifier (display name/username) when available.
+   */
+  function standingPlayerDisplayName(entry: StandingEntry): string {
     return (
       entry.user_event_status?.best_identifier ??
       entry.player?.best_identifier ??
@@ -862,20 +886,40 @@ export function registerEventTools(server: McpServer): void {
         const eventStandings = await fetchAllEventStandings(allEvents.map((e) => e.id));
         const agg = new Map<
           string,
-          { wins: number; losses: number; eventsPlayed: number; placements: number[] }
+          {
+            displayName: string;
+            hasUserEventStatus: boolean;
+            wins: number;
+            losses: number;
+            eventsPlayed: number;
+            placements: number[];
+          }
         >();
 
         for (const { event, standings } of eventStandings) {
           for (let i = 0; i < standings.length; i++) {
             const entry = standings[i];
-            const name = standingPlayerName(entry);
-            if (name === "—") continue;
+            const key = standingPlayerKey(entry);
+            if (key === "—") continue;
+            const displayName = standingPlayerDisplayName(entry);
+            const hasUserEventStatus = entry.user_event_status?.best_identifier !== undefined;
             const placement = standingPlacement(entry, i);
             const { wins, losses } = standingWinsLosses(entry);
-            let rec = agg.get(name);
+            let rec = agg.get(key);
             if (!rec) {
-              rec = { wins: 0, losses: 0, eventsPlayed: 0, placements: [] };
-              agg.set(name, rec);
+              rec = {
+                displayName,
+                hasUserEventStatus,
+                wins: 0,
+                losses: 0,
+                eventsPlayed: 0,
+                placements: [],
+              };
+              agg.set(key, rec);
+            } else if (hasUserEventStatus && !rec.hasUserEventStatus) {
+              // Prefer display name from user_event_status when we find one
+              rec.displayName = displayName;
+              rec.hasUserEventStatus = true;
             }
             rec.wins += wins;
             rec.losses += losses;
@@ -884,10 +928,10 @@ export function registerEventTools(server: McpServer): void {
           }
         }
 
-        let players: PlayerStats[] = Array.from(agg.entries())
-          .filter(([, r]) => r.eventsPlayed >= minEvents)
-          .map(([playerName, r]) => ({
-            playerName,
+        let players: PlayerStats[] = Array.from(agg.values())
+          .filter((r) => r.eventsPlayed >= minEvents)
+          .map((r) => ({
+            playerName: r.displayName,
             totalWins: r.wins,
             totalLosses: r.losses,
             eventsPlayed: r.eventsPlayed,
@@ -1066,20 +1110,40 @@ export function registerEventTools(server: McpServer): void {
         const eventStandings = await fetchAllEventStandings(allEvents.map((e) => e.id));
         const agg = new Map<
           string,
-          { wins: number; losses: number; eventsPlayed: number; placements: number[] }
+          {
+            displayName: string;
+            hasUserEventStatus: boolean;
+            wins: number;
+            losses: number;
+            eventsPlayed: number;
+            placements: number[];
+          }
         >();
 
         for (const { event, standings } of eventStandings) {
           for (let i = 0; i < standings.length; i++) {
             const entry = standings[i];
-            const name = standingPlayerName(entry);
-            if (name === "—") continue;
+            const key = standingPlayerKey(entry);
+            if (key === "—") continue;
+            const displayName = standingPlayerDisplayName(entry);
+            const hasUserEventStatus = entry.user_event_status?.best_identifier !== undefined;
             const placement = standingPlacement(entry, i);
             const { wins, losses } = standingWinsLosses(entry);
-            let rec = agg.get(name);
+            let rec = agg.get(key);
             if (!rec) {
-              rec = { wins: 0, losses: 0, eventsPlayed: 0, placements: [] };
-              agg.set(name, rec);
+              rec = {
+                displayName,
+                hasUserEventStatus,
+                wins: 0,
+                losses: 0,
+                eventsPlayed: 0,
+                placements: [],
+              };
+              agg.set(key, rec);
+            } else if (hasUserEventStatus && !rec.hasUserEventStatus) {
+              // Prefer display name from user_event_status when we find one
+              rec.displayName = displayName;
+              rec.hasUserEventStatus = true;
             }
             rec.wins += wins;
             rec.losses += losses;
@@ -1088,10 +1152,10 @@ export function registerEventTools(server: McpServer): void {
           }
         }
 
-        let players: PlayerStats[] = Array.from(agg.entries())
-          .filter(([, r]) => r.eventsPlayed >= minEvents)
-          .map(([playerName, r]) => ({
-            playerName,
+        let players: PlayerStats[] = Array.from(agg.values())
+          .filter((r) => r.eventsPlayed >= minEvents)
+          .map((r) => ({
+            playerName: r.displayName,
             totalWins: r.wins,
             totalLosses: r.losses,
             eventsPlayed: r.eventsPlayed,
