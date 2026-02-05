@@ -750,7 +750,7 @@ export function registerEventTools(server: McpServer): void {
     "get_player_leaderboard",
     {
       description:
-        "Aggregate player performance across multiple past events and return a leaderboard. Use when the user asks who had the most wins, best record, or top performers in a region and date range (e.g. 'who had the most wins in set championships in January 2026 in Detroit'). Single tool call replaces many search_events + get_event_standings calls. Call list_filters first to get valid format/category names. Date range limited to 3 months; radius limited to 100 miles.",
+        "Aggregate player performance across multiple past and in-progress events and return a leaderboard. Use when the user asks who had the most wins, best record, or top performers in a region and date range (e.g. 'who had the most wins in set championships in January 2026 in Detroit'). Single tool call replaces many search_events + get_event_standings calls. Call list_filters first to get valid format/category names. Date range limited to 3 months; radius limited to 100 miles.",
       inputSchema: {
         city: z.string().min(1).describe("City name, ideally with state/country (e.g. 'Detroit, MI')"),
         radius_miles: z.number().min(0).max(MAX_RADIUS_MILES).default(50).describe(`Search radius in miles (default: 50, max: ${MAX_RADIUS_MILES})`),
@@ -846,7 +846,7 @@ export function registerEventTools(server: McpServer): void {
           latitude: latitude.toString(),
           longitude: longitude.toString(),
           num_miles: radius.toString(),
-          display_statuses: "past",
+          display_statuses: ["past", "inProgress"],
           start_date_after: start.toISOString(),
           start_date_before: end.toISOString(),
           page: "1",
@@ -877,7 +877,7 @@ export function registerEventTools(server: McpServer): void {
             content: [
               {
                 type: "text" as const,
-                text: `No past events found near ${displayCity} for ${args.start_date} – ${args.end_date} with the given filters. Try a larger radius or different dates.`,
+                text: `No past or in-progress events found near ${displayCity} for ${args.start_date} – ${args.end_date} with the given filters. Try a larger radius or different dates.`,
               },
             ],
           };
@@ -1002,7 +1002,7 @@ export function registerEventTools(server: McpServer): void {
     "get_player_leaderboard_by_store",
     {
       description:
-        "Aggregate player performance across past events at a specific store and return a leaderboard. Use when the user asks who had the most wins or top performers at a particular store (e.g. 'leaderboard at Game Haven', 'best players at store 123'). Get store ID from search_stores. Date range limited to 3 months.",
+        "Aggregate player performance across past and in-progress events at a specific store and return a leaderboard. Use when the user asks who had the most wins or top performers at a particular store (e.g. 'leaderboard at Game Haven', 'best players at store 123'). Get store ID from search_stores. Date range limited to 3 months.",
       inputSchema: {
         store_id: z.number().describe("Store ID (from search_stores)"),
         start_date: z.string().describe("Start of date range (YYYY-MM-DD)"),
@@ -1067,7 +1067,7 @@ export function registerEventTools(server: McpServer): void {
           latitude: "0",
           longitude: "0",
           num_miles: "12500",
-          display_statuses: "past",
+          display_statuses: ["past", "inProgress"],
           store: args.store_id.toString(),
           start_date_after: start.toISOString(),
           start_date_before: end.toISOString(),
@@ -1101,7 +1101,7 @@ export function registerEventTools(server: McpServer): void {
             content: [
               {
                 type: "text" as const,
-                text: `No past events found at store ID ${args.store_id} for ${args.start_date} – ${args.end_date} with the given filters. Try different dates or filters.`,
+                text: `No past or in-progress events found at store ID ${args.store_id} for ${args.start_date} – ${args.end_date} with the given filters. Try different dates or filters.`,
               },
             ],
           };
