@@ -59,7 +59,7 @@ export function formatMatchEntry(match: RoundMatchEntry, index: number): string 
   const names = rels
     .slice()
     .sort((a, b) => (a.player_order ?? 0) - (b.player_order ?? 0))
-    .map((r) => r.player?.best_identifier ?? "—");
+    .map((r) => r.user_event_status?.best_identifier ?? r.player?.best_identifier ?? "—");
   const vs = names.length >= 2 ? `${names[0]} vs ${names[1]}` : names[0] ?? "—";
   const table = match.table_number != null ? `Table ${match.table_number}` : "";
   const prefix = table ? `${table}: ` : "";
@@ -71,7 +71,10 @@ export function formatMatchEntry(match: RoundMatchEntry, index: number): string 
   }
   if (match.winning_player != null && match.status === "COMPLETE") {
     const winnerRel = rels.find((r) => r.player?.id === match.winning_player);
-    const winner = winnerRel?.player?.best_identifier ?? `Player ${match.winning_player}`;
+    const winner =
+      winnerRel?.user_event_status?.best_identifier ??
+      winnerRel?.player?.best_identifier ??
+      `Player ${match.winning_player}`;
     const score =
       match.games_won_by_winner != null && match.games_won_by_loser != null
         ? ` ${match.games_won_by_winner}-${match.games_won_by_loser}`
@@ -85,6 +88,7 @@ export function formatMatchEntry(match: RoundMatchEntry, index: number): string 
 export function formatStandingEntry(entry: StandingEntry, index: number): string {
   const rank = entry.rank ?? entry.placement ?? index + 1;
   const name =
+    entry.user_event_status?.best_identifier ??
     entry.player?.best_identifier ??
     entry.player_name ??
     entry.display_name ??

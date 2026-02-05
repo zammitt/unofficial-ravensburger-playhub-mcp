@@ -700,6 +700,7 @@ export function registerEventTools(server: McpServer): void {
 
   function standingPlayerName(entry: StandingEntry): string {
     return (
+      entry.user_event_status?.best_identifier ??
       entry.player?.best_identifier ??
       entry.player_name ??
       entry.display_name ??

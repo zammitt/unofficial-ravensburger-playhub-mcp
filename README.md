@@ -214,6 +214,8 @@ Coverage is reported for `dist/` (excluding `dist/test/`). Run `npm run test:cov
 
 Data comes from the **Ravensburger Play API** (events, stores, formats, categories, registrations, tournament rounds/standings). City-based search uses **Nominatim** (OpenStreetMap) for geocoding. Neither API requires keys.
 
+**Player names:** Standings, round matches, registrations, and leaderboards show the player’s **display name** (username) when the API provides it, and fall back to first name + last initial (e.g. "Joseph C") when no display name is set.
+
 ## Security & privacy
 
 - No API keys or secrets are stored in this repo or by the server.

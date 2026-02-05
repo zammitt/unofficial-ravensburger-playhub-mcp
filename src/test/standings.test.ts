@@ -22,6 +22,16 @@ describe("formatStandingEntry", () => {
     assert.ok(out.startsWith("3. Charlie"));
   });
 
+  it("prefers user_event_status.best_identifier when present (display name over First L)", () => {
+    const entry: StandingEntry = {
+      rank: 1,
+      player: { best_identifier: "Devin R" },
+      user_event_status: { best_identifier: "Deviknyte" },
+    };
+    const out = formatStandingEntry(entry, 0);
+    assert.ok(out.startsWith("1. Deviknyte"));
+  });
+
   it("includes record when wins/losses present", () => {
     const entry: StandingEntry = {
       rank: 1,

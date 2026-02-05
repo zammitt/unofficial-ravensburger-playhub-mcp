@@ -129,6 +129,11 @@ export interface StandingEntry {
   opponent_match_win_percentage?: number;
   game_win_pct?: number;
   game_win_percentage?: number;
+  /** Display name/username when available; prefer over player.best_identifier */
+  user_event_status?: {
+    best_identifier?: string;
+    [key: string]: unknown;
+  };
   [key: string]: unknown;
 }
 
@@ -147,6 +152,11 @@ export interface PlayerMatchRelationship {
   id?: number;
   player_order?: number;
   player?: { id?: number; best_identifier?: string; [key: string]: unknown };
+  /** Display name/username when available; prefer over player.best_identifier */
+  user_event_status?: {
+    best_identifier?: string;
+    [key: string]: unknown;
+  };
   [key: string]: unknown;
 }
 

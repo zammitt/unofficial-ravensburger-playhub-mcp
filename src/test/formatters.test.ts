@@ -266,6 +266,31 @@ describe("formatMatchEntry", () => {
     assert.ok(out.includes("2-1"));
   });
 
+  it("prefers user_event_status.best_identifier for pairings and winner (display name)", () => {
+    const match: RoundMatchEntry = {
+      table_number: 1,
+      status: "COMPLETE",
+      winning_player: 15124,
+      games_won_by_winner: 2,
+      games_won_by_loser: 1,
+      player_match_relationships: [
+        {
+          player_order: 1,
+          player: { id: 6679, best_identifier: "Rachel Z" },
+          user_event_status: { best_identifier: "Rachel Zammitt" },
+        },
+        {
+          player_order: 2,
+          player: { id: 15124, best_identifier: "Joseph C" },
+          user_event_status: { best_identifier: "JC22" },
+        },
+      ],
+    };
+    const out = formatMatchEntry(match, 0);
+    assert.ok(out.includes("Rachel Zammitt vs JC22"));
+    assert.ok(out.includes("JC22 wins"));
+  });
+
   it("formats bye match", () => {
     const match: RoundMatchEntry = {
       table_number: 2,
@@ -316,6 +341,16 @@ describe("formatStandingEntry", () => {
     const entry: StandingEntry = { player: { best_identifier: "Corey J" }, rank: 1 };
     const out = formatStandingEntry(entry, 0);
     assert.ok(out.includes("1. Corey J"));
+  });
+
+  it("prefers user_event_status.best_identifier over player.best_identifier (display name)", () => {
+    const entry: StandingEntry = {
+      rank: 1,
+      player: { best_identifier: "Joseph C" },
+      user_event_status: { best_identifier: "JC22" },
+    };
+    const out = formatStandingEntry(entry, 0);
+    assert.ok(out.includes("1. JC22"));
   });
 
   it("uses em dash when no name fields", () => {
