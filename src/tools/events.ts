@@ -942,17 +942,34 @@ export function registerEventTools(server: McpServer): void {
 
         const sortBy = args.sort_by;
         if (sortBy === "total_wins") {
-          players.sort((a, b) => b.totalWins - a.totalWins);
+          players.sort((a, b) => {
+            if (b.totalWins !== a.totalWins) return b.totalWins - a.totalWins;
+            if (a.totalLosses !== b.totalLosses) return a.totalLosses - b.totalLosses;
+            return a.bestPlacement - b.bestPlacement;
+          });
         } else if (sortBy === "events_played") {
-          players.sort((a, b) => b.eventsPlayed - a.eventsPlayed);
+          players.sort((a, b) => {
+            if (b.eventsPlayed !== a.eventsPlayed) return b.eventsPlayed - a.eventsPlayed;
+            if (b.totalWins !== a.totalWins) return b.totalWins - a.totalWins;
+            if (a.totalLosses !== b.totalLosses) return a.totalLosses - b.totalLosses;
+            return a.bestPlacement - b.bestPlacement;
+          });
         } else if (sortBy === "win_rate") {
           players.sort((a, b) => {
             const rateA = a.totalWins + a.totalLosses > 0 ? a.totalWins / (a.totalWins + a.totalLosses) : 0;
             const rateB = b.totalWins + b.totalLosses > 0 ? b.totalWins / (b.totalWins + b.totalLosses) : 0;
-            return rateB - rateA;
+            if (rateB !== rateA) return rateB - rateA;
+            if (b.totalWins !== a.totalWins) return b.totalWins - a.totalWins;
+            if (a.totalLosses !== b.totalLosses) return a.totalLosses - b.totalLosses;
+            return a.bestPlacement - b.bestPlacement;
           });
         } else {
-          players.sort((a, b) => a.bestPlacement - b.bestPlacement);
+          players.sort((a, b) => {
+            if (a.bestPlacement !== b.bestPlacement) return a.bestPlacement - b.bestPlacement;
+            if (b.totalWins !== a.totalWins) return b.totalWins - a.totalWins;
+            if (a.totalLosses !== b.totalLosses) return a.totalLosses - b.totalLosses;
+            return 0;
+          });
         }
         players = players.slice(0, limit);
 
@@ -1166,17 +1183,34 @@ export function registerEventTools(server: McpServer): void {
 
         const sortBy = args.sort_by;
         if (sortBy === "total_wins") {
-          players.sort((a, b) => b.totalWins - a.totalWins);
+          players.sort((a, b) => {
+            if (b.totalWins !== a.totalWins) return b.totalWins - a.totalWins;
+            if (a.totalLosses !== b.totalLosses) return a.totalLosses - b.totalLosses;
+            return a.bestPlacement - b.bestPlacement;
+          });
         } else if (sortBy === "events_played") {
-          players.sort((a, b) => b.eventsPlayed - a.eventsPlayed);
+          players.sort((a, b) => {
+            if (b.eventsPlayed !== a.eventsPlayed) return b.eventsPlayed - a.eventsPlayed;
+            if (b.totalWins !== a.totalWins) return b.totalWins - a.totalWins;
+            if (a.totalLosses !== b.totalLosses) return a.totalLosses - b.totalLosses;
+            return a.bestPlacement - b.bestPlacement;
+          });
         } else if (sortBy === "win_rate") {
           players.sort((a, b) => {
             const rateA = a.totalWins + a.totalLosses > 0 ? a.totalWins / (a.totalWins + a.totalLosses) : 0;
             const rateB = b.totalWins + b.totalLosses > 0 ? b.totalWins / (b.totalWins + b.totalLosses) : 0;
-            return rateB - rateA;
+            if (rateB !== rateA) return rateB - rateA;
+            if (b.totalWins !== a.totalWins) return b.totalWins - a.totalWins;
+            if (a.totalLosses !== b.totalLosses) return a.totalLosses - b.totalLosses;
+            return a.bestPlacement - b.bestPlacement;
           });
         } else {
-          players.sort((a, b) => a.bestPlacement - b.bestPlacement);
+          players.sort((a, b) => {
+            if (a.bestPlacement !== b.bestPlacement) return a.bestPlacement - b.bestPlacement;
+            if (b.totalWins !== a.totalWins) return b.totalWins - a.totalWins;
+            if (a.totalLosses !== b.totalLosses) return a.totalLosses - b.totalLosses;
+            return 0;
+          });
         }
         players = players.slice(0, limit);
 

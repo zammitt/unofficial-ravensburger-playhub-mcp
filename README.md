@@ -176,7 +176,7 @@ The server exposes tools that are easy for LLMs to choose and call: descriptions
 
 **Dates:** When you omit `start_date`, search uses the **start of today (UTC)** so events that already started today are included. For "today's events" pass `start_date: "YYYY-MM-DD"` with today's date (correct year).
 
-**get_player_leaderboard** and **get_player_leaderboard_by_store** can take longer when many events match (they fetch and aggregate standings for each). Use a narrow date range or category (e.g. "Set Championship") to keep results focused.
+**get_player_leaderboard** and **get_player_leaderboard_by_store** can take longer when many events match (they fetch and aggregate standings for each). Use a narrow date range or category (e.g. "Set Championship") to keep results focused. Ties on sort (e.g. total_wins) are broken by fewer losses, then best placement.
 
 ### Performance – caching
 
