@@ -42,6 +42,7 @@
   ],
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.25.3",
+    "unofficial-ravensburger-playhub-api": "file:../unofficial-ravensburger-playhub-api",
     "zod": "^4.3.6"
   },
   "devDependencies": {
