@@ -3,7 +3,7 @@
  * with one or more call variations to ensure the server and all tools work end-to-end.
  *
  * Run after build: npm run build && npm test
- * Requires network (Ravensburger API, Nominatim geocoding).
+ * Requires network (Ravensburger API and Play Hub geocoding/places APIs).
  */
 
 import { describe, it, before, after } from "node:test";
@@ -21,6 +21,13 @@ const projectRoot = resolve(__dirname, "..", "..");
 const EXPECTED_TOOL_NAMES = [
   "list_capabilities",
   "list_filters",
+  "list_quick_filters",
+  "list_games",
+  "get_game_details",
+  "search_cards",
+  "get_card_details",
+  "search_places",
+  "get_place_coordinates",
   "search_events",
   "get_event_details",
   "get_tournament_round_standings",
@@ -32,6 +39,7 @@ const EXPECTED_TOOL_NAMES = [
   "search_events_by_city",
   "get_store_events",
   "search_stores",
+  "get_store_details",
   "search_stores_by_city",
 ] as const;
 
@@ -105,6 +113,65 @@ describe("MCP server integration – all tools and call variations", { timeout: 
     assert.ok(text.includes("Formats") || text.includes("formats"), "list_filters should include formats");
     assert.ok(text.includes("Categories") || text.includes("categories"), "list_filters should include categories");
     assert.ok(text.includes("Example") || text.includes("formats"), "list_filters should include usage example or param names");
+  });
+
+  it("list_quick_filters – default game", async () => {
+    const { text, isError } = await callTool("list_quick_filters", {});
+    assert.ok(!isError, `list_quick_filters should not error: ${text}`);
+    assert.ok(text.includes("Quick filters") || text.includes("No quick filters"), "should return quick-filter text");
+  });
+
+  it("list_games – no args", async () => {
+    const { text, isError } = await callTool("list_games", {});
+    assert.ok(!isError, `list_games should not error: ${text}`);
+    assert.ok(text.includes("slug") || text.includes("Available games"), "list_games should mention slugs/games");
+  });
+
+  it("get_game_details – disney-lorcana", async () => {
+    const { text, isError } = await callTool("get_game_details", { game_slug: "disney-lorcana" });
+    assert.ok(!isError, `get_game_details should not error: ${text}`);
+    assert.ok(text.includes("disney-lorcana") || text.includes("Disney Lorcana"), "should include game slug/name");
+  });
+
+  it("search_cards and get_card_details – card flow", async () => {
+    const search = await callTool("search_cards", { query: "elsa", max_results: 5 });
+    assert.ok(!search.isError, `search_cards should not error: ${search.text}`);
+    assert.ok(search.text.includes("Card ID") || search.text.includes("No cards"), "search_cards should include card IDs or no-results text");
+    const match = search.text.match(/Card ID: ([0-9a-fA-F-]{16,})/);
+    if (!match) return;
+
+    const details = await callTool("get_card_details", { card_id: match[1] });
+    assert.ok(!details.isError, `get_card_details should not error: ${details.text}`);
+    assert.ok(details.text.includes("Card ID") || details.text.includes("Card:"), "get_card_details should include card metadata");
+  });
+
+  it("search_places – city autocomplete", async () => {
+    const { text, isError } = await callTool("search_places", {
+      query: "Detroit, MI",
+      max_results: 5,
+    });
+    assert.ok(!isError, `search_places should not error: ${text}`);
+    assert.ok(
+      text.includes("place_id:") || text.includes("No place suggestions"),
+      "search_places should include place IDs or no-results text"
+    );
+  });
+
+  it("get_place_coordinates – from search_places place_id", async () => {
+    const search = await callTool("search_places", {
+      query: "Detroit, MI",
+      max_results: 5,
+    });
+    assert.ok(!search.isError, `search_places for get_place_coordinates should not error: ${search.text}`);
+    const match = search.text.match(/place_id: ([A-Za-z0-9_-]{8,})/);
+    if (!match) return;
+
+    const geocoded = await callTool("get_place_coordinates", { place_id: match[1] });
+    assert.ok(!geocoded.isError, `get_place_coordinates should not error: ${geocoded.text}`);
+    assert.ok(
+      geocoded.text.includes("Latitude:") || geocoded.text.includes("Address:"),
+      "get_place_coordinates should include address and coordinates"
+    );
   });
 
   it("search_events – required only", async () => {
@@ -384,6 +451,16 @@ describe("MCP server integration – all tools and call variations", { timeout: 
     assert.ok(typeof text === "string", "should return text");
   });
 
+  it("get_store_details – from search_stores game_store_id", async () => {
+    const search = await callTool("search_stores", { page: 1, page_size: 5 });
+    assert.ok(!search.isError, `search_stores for get_store_details should not error: ${search.text}`);
+    const match = search.text.match(/Game Store ID: ([0-9a-fA-F-]{16,})/);
+    if (!match) return;
+    const details = await callTool("get_store_details", { game_store_id: match[1] });
+    assert.ok(!details.isError, `get_store_details should not error: ${details.text}`);
+    assert.ok(details.text.includes("Game Store ID") || details.text.includes("Store ID"), "store details should include IDs");
+  });
+
   it("search_stores – by name", async () => {
     const { text, isError } = await callTool("search_stores", {
       search: "game",
@@ -391,6 +468,17 @@ describe("MCP server integration – all tools and call variations", { timeout: 
       page_size: 5,
     });
     assert.ok(!isError, `search_stores (search) should not error: ${text}`);
+    assert.ok(typeof text === "string", "should return text");
+  });
+
+  it("search_stores – with store_type filter", async () => {
+    const { text, isError } = await callTool("search_stores", {
+      search: "game",
+      store_type: "organizedPlay",
+      page: 1,
+      page_size: 5,
+    });
+    assert.ok(!isError, `search_stores (store_type) should not error: ${text}`);
     assert.ok(typeof text === "string", "should return text");
   });
 
@@ -421,6 +509,18 @@ describe("MCP server integration – all tools and call variations", { timeout: 
       page: 1,
     });
     assert.ok(!isError, `search_stores_by_city (optional) should not error: ${text}`);
+    assert.ok(typeof text === "string", "should return text");
+  });
+
+  it("search_stores_by_city – with store_type filter", async () => {
+    const { text, isError } = await callTool("search_stores_by_city", {
+      city: "Chicago, IL",
+      radius_miles: 20,
+      store_type: "organizedPlay",
+      page: 1,
+      page_size: 5,
+    });
+    assert.ok(!isError, `search_stores_by_city (store_type) should not error: ${text}`);
     assert.ok(typeof text === "string", "should return text");
   });
 

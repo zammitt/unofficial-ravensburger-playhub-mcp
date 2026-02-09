@@ -31,6 +31,7 @@ describe("formatStore", () => {
     const out = formatStore(gameStore);
     assert.ok(out.includes("**Test Store**"));
     assert.ok(out.includes("Store ID: 1"));
+    assert.ok(out.includes("Game Store ID: gs1"));
   });
 
   it("includes address, phone, email, website when present", () => {

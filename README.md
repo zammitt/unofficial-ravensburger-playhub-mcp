@@ -163,6 +163,13 @@ The server exposes tools that are easy for LLMs to choose and call: descriptions
 |------|-------------|
 | **list_capabilities** | Call first when unsure which tool to use (e.g. search_events vs search_events_by_city). Returns a short guide. |
 | **list_filters** | Before searching events by format or category; returns exact names for the `formats` and `categories` parameters. |
+| **list_quick_filters** | List preset website filters like "Locals this week" and "Drivable Set Championships". |
+| **list_games** | List available game slugs and IDs from Play Hub. |
+| **get_game_details** | Get metadata for one game by slug (e.g. `disney-lorcana`). |
+| **search_cards** | Search cards by name text and return card IDs plus summary metadata. |
+| **get_card_details** | Fetch full metadata for one card by card ID. |
+| **search_places** | Autocomplete place suggestions and return `place_id` values for precise location matching. |
+| **get_place_coordinates** | Resolve a `place_id` to normalized address and lat/lng coordinates. |
 | **search_events** | When you have latitude/longitude (e.g. from a map or device). |
 | **search_events_by_city** | When the user says a city name (e.g. "events in Seattle" or "Austin, TX"). Geocoded. |
 | **get_store_events** | Events at a specific store by store ID (from search_stores). Use when the user asks about events at a particular store (e.g. "events at Game Haven"). No city or geocoding needed. |
@@ -173,8 +180,9 @@ The server exposes tools that are easy for LLMs to choose and call: descriptions
 | **get_event_registrations** | Who is signed up for an event (names from API); needs event ID. |
 | **get_tournament_round_standings** | Standings for a specific round when you have a round ID (e.g. from get_event_details). |
 | **get_round_matches** | Pairings and match results for a round; needs round ID (from get_event_details). Use for "who played whom" or match results. |
-| **search_stores** | Stores or venues; optional name search and/or lat/long + radius. |
-| **search_stores_by_city** | Stores near a city name (e.g. "stores in Seattle"). |
+| **search_stores** | Stores or venues; optional name search and/or lat/long + radius + `store_type`. |
+| **get_store_details** | Full store profile details by `game_store_id` (UUID from search_stores output). |
+| **search_stores_by_city** | Stores near a city name (e.g. "stores in Seattle"), with optional `store_type`. |
 
 **Dates:** When you omit `start_date`, search uses the **start of today (UTC)** so events that already started today are included. For "today's events" pass `start_date: "YYYY-MM-DD"` with today's date (correct year).
 
@@ -213,21 +221,21 @@ npm run test:coverage:all  # coverage including integration tests
 ### Tests
 
 - **Unit tests** – `api.test.ts` (API client: filter maps, strict resolution, fetch with mocked `fetch`, `loadFilterOptions`), `formatters.test.ts` (formatStore, formatEvent, formatLeaderboard, formatLeaderboardEntry, formatStandingEntry, formatRegistrationEntry), `http.test.ts` (retry/backoff helpers), `registrations.test.ts`, `standings.test.ts`. No network required for unit tests (`npm test`).
-- **Integration tests** – `src/test/mcp-tools.integration.test.ts` spawns the MCP server and calls each tool (required-only, optional params, pagination). They hit the real Ravensburger Play API and Nominatim for geocoding, so **network access is required** and tests may be slower or flaky if the APIs are slow or down (`npm run test:integration`).
+- **Integration tests** – `src/test/mcp-tools.integration.test.ts` spawns the MCP server and calls each tool (required-only, optional params, pagination). They hit the real Ravensburger Play APIs (hydraproxy + Play Hub geocoding/autocomplete endpoints), so **network access is required** and tests may be slower or flaky if the APIs are slow or down (`npm run test:integration`).
   You can increase the suite timeout with `INTEGRATION_TEST_TIMEOUT_MS`, e.g. `INTEGRATION_TEST_TIMEOUT_MS=180000 npm run test:integration`.
 
 Coverage is reported for `dist/` (excluding `dist/test/`). Run `npm run test:coverage` to see statement/branch/function coverage for the app code.
 
 ## API and data
 
-Data comes from the **Ravensburger Play API** (events, stores, formats, categories, registrations, tournament rounds/standings). City-based search uses **Nominatim** (OpenStreetMap) for geocoding. Neither API requires keys.
+Data comes from the **Ravensburger Play API** (events, stores, formats, categories, registrations, tournament rounds/standings, cards, games). City-based search uses Play Hub’s public geocoding endpoint (`tcg.ravensburgerplay.com/api/address/geocode`), the same path used by the website UI. No API keys are required.
 
 **Player names:** Standings, round matches, registrations, and leaderboards show the player’s **display name** (username) when the API provides it, and fall back to first name + last initial (e.g. "Joseph C") when no display name is set.
 
 ## Security & privacy
 
 - No API keys or secrets are stored in this repo or by the server.
-- All tools use public Ravensburger and Nominatim endpoints with no authentication.
+- All tools use public Ravensburger/Play Hub endpoints with no authentication.
 
 ## Publishing to npm
 

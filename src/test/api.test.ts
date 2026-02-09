@@ -11,13 +11,20 @@ import {
   getCategoryName,
   fetchGameplayFormats,
   fetchCategories,
+  fetchEventQuickFilters,
   fetchEvents,
   fetchEventDetails,
   fetchEventRegistrations,
+  fetchStoreDetails,
   fetchTournamentRoundMatches,
   fetchTournamentRoundStandings,
   fetchAllRoundStandings,
   fetchStores,
+  autocompletePlaces,
+  geocodeAddress,
+  geocodePlaceId,
+  searchCardsQuick,
+  fetchGames,
   clearCaches,
   getCacheStats,
 } from "../lib/api.js";
@@ -166,6 +173,98 @@ describe("api – fetch with mocked global fetch", () => {
     await assert.rejects(fetchCategories, /Failed to fetch categories/);
   });
 
+  it("fetchEventQuickFilters returns json on ok response", async () => {
+    const data = [{ id: 1, name: "Locals this week", filter_config: { displayStatuses: ["upcoming"] } }];
+    globalThis.fetch = async (_input: RequestInfo | URL) =>
+      new Response(JSON.stringify(data), { status: 200 });
+    const result = await fetchEventQuickFilters();
+    assert.deepStrictEqual(result, data);
+  });
+
+  it("fetchGames returns json on ok response", async () => {
+    const data = [{ id: 1, slug: "disney-lorcana", name: "Disney Lorcana" }];
+    globalThis.fetch = async (_input: RequestInfo | URL) =>
+      new Response(JSON.stringify(data), { status: 200 });
+    const result = await fetchGames();
+    assert.deepStrictEqual(result, data);
+  });
+
+  it("geocodeAddress returns parsed data payload", async () => {
+    const data = {
+      data: {
+        address: {
+          formattedAddress: "Seattle, WA, USA",
+          lat: 47.6061,
+          lng: -122.3328,
+        },
+      },
+      error: null,
+    };
+    globalThis.fetch = async (_input: RequestInfo | URL) =>
+      new Response(JSON.stringify(data), { status: 200 });
+    const result = await geocodeAddress("Seattle, WA");
+    assert.ok(result);
+    assert.strictEqual(result?.address.formattedAddress, "Seattle, WA, USA");
+    assert.strictEqual(result?.address.lat, 47.6061);
+  });
+
+  it("geocodePlaceId returns parsed data payload", async () => {
+    const data = {
+      data: {
+        address: {
+          formattedAddress: "Detroit, MI, USA",
+          lat: 42.3314,
+          lng: -83.0458,
+        },
+        placeId: "ChIJdR3LEAhO4okR0dr0K8z3aM0",
+      },
+      error: null,
+    };
+    globalThis.fetch = async (_input: RequestInfo | URL) =>
+      new Response(JSON.stringify(data), { status: 200 });
+    const result = await geocodePlaceId("ChIJdR3LEAhO4okR0dr0K8z3aM0");
+    assert.ok(result);
+    assert.strictEqual(result?.placeId, "ChIJdR3LEAhO4okR0dr0K8z3aM0");
+    assert.strictEqual(result?.address.lat, 42.3314);
+  });
+
+  it("autocompletePlaces returns suggestions payload", async () => {
+    const data = {
+      suggestions: [
+        {
+          placePrediction: {
+            placeId: "ChIJdR3LEAhO4okR0dr0K8z3aM0",
+            structuredFormat: {
+              mainText: { text: "Detroit" },
+              secondaryText: { text: "MI, USA" },
+            },
+          },
+        },
+      ],
+    };
+    globalThis.fetch = async (_input: RequestInfo | URL) =>
+      new Response(JSON.stringify(data), { status: 200 });
+    const result = await autocompletePlaces("detroit", "session-token");
+    assert.strictEqual(result.suggestions.length, 1);
+    assert.strictEqual(result.suggestions[0]?.placePrediction?.placeId, "ChIJdR3LEAhO4okR0dr0K8z3aM0");
+  });
+
+  it("searchCardsQuick sends POST body and returns json", async () => {
+    const data = { count: 1, results: [{ id: "card-1", name: "Elsa" }] };
+    globalThis.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+      const u = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+      assert.ok(u.includes("deckbuilder/cards/quick-search"));
+      assert.strictEqual(init?.method, "POST");
+      const body = typeof init?.body === "string" ? JSON.parse(init.body) : {};
+      assert.strictEqual(body.query, "elsa");
+      assert.strictEqual(body.game_id, 1);
+      return new Response(JSON.stringify(data), { status: 200 });
+    };
+    const result = await searchCardsQuick("elsa", 1);
+    assert.strictEqual(result.count, 1);
+    assert.strictEqual(result.results[0].id, "card-1");
+  });
+
   it("fetchEvents builds url with params and returns json", async () => {
     const data = { count: 0, total: 0, results: [], page_size: 25, current_page_number: 1, next_page_number: null, previous_page_number: null };
     globalThis.fetch = async (input: RequestInfo | URL) => {
@@ -254,6 +353,42 @@ describe("api – fetch with mocked global fetch", () => {
     );
   });
 
+  it("fetchTournamentRoundStandings falls back to non-paginated standings when paginated is empty", async () => {
+    globalThis.fetch = async (input: RequestInfo | URL) => {
+      const u = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+      if (u.includes("/standings/paginated/")) {
+        return new Response(
+          JSON.stringify({
+            count: 0,
+            total: 0,
+            results: [],
+            page_size: 25,
+            current_page_number: 1,
+            next_page_number: null,
+            previous_page_number: null,
+          }),
+          { status: 200 }
+        );
+      }
+      if (u.includes("/standings/")) {
+        return new Response(
+          JSON.stringify({
+            standings: [
+              { rank: 1, player_name: "Alice", wins: 3, losses: 0 },
+              { rank: 2, player_name: "Bob", wins: 2, losses: 1 },
+            ],
+          }),
+          { status: 200 }
+        );
+      }
+      return new Response("error", { status: 404 });
+    };
+    const result = await fetchTournamentRoundStandings(100, 1, 25);
+    assert.strictEqual(result.total, 2);
+    assert.strictEqual(result.results.length, 2);
+    assert.strictEqual(result.results[0].player_name, "Alice");
+  });
+
   it("fetchTournamentRoundMatches returns json on ok", async () => {
     const data = { count: 0, total: 0, results: [], page_size: 25, current_page_number: 1, next_page_number: null, previous_page_number: null };
     globalThis.fetch = async (_input: RequestInfo | URL) =>
@@ -297,6 +432,15 @@ describe("api – fetch with mocked global fetch", () => {
   it("fetchStores throws on non-ok", async () => {
     globalThis.fetch = async (_input: RequestInfo | URL) => new Response("error", { status: 500 });
     await assert.rejects(() => fetchStores({}), /API request failed/);
+  });
+
+  it("fetchStoreDetails returns json on ok response", async () => {
+    const data = { id: "store-uuid", store: { id: 1, name: "Game Haven" }, store_types: [], store_types_pretty: [] };
+    globalThis.fetch = async (_input: RequestInfo | URL) =>
+      new Response(JSON.stringify(data), { status: 200 });
+    const result = await fetchStoreDetails("store-uuid");
+    assert.strictEqual(result.id, "store-uuid");
+    assert.strictEqual(result.store.name, "Game Haven");
   });
 });
 

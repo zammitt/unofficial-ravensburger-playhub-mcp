@@ -15,7 +15,7 @@ import type {
 
 export function formatStore(gameStore: GameStore): string {
   const store = gameStore.store;
-  const lines: string[] = [`**${store.name}** (Store ID: ${store.id})`];
+  const lines: string[] = [`**${store.name}** (Store ID: ${store.id}, Game Store ID: ${gameStore.id})`];
 
   if (store.full_address) {
     lines.push(`📍 ${store.full_address}`);

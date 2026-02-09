@@ -4,9 +4,16 @@
 
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import { fetchStores } from "../lib/api.js";
-import { fetchWithRetry } from "../lib/http.js";
+import { fetchStoreDetails, fetchStores, geocodeAddress } from "../lib/api.js";
 import { formatStore } from "../lib/formatters.js";
+
+const STORE_TYPES = [
+  "physicalRetailer",
+  "onlineRetailer",
+  "physicalAndOnlineRetailer",
+  "organizedPlay",
+  "partner",
+] as const;
 
 export function registerStoreTools(server: McpServer): void {
   // Tool: Search Stores
@@ -14,12 +21,16 @@ export function registerStoreTools(server: McpServer): void {
     "search_stores",
     {
       description:
-        "Search for game stores that host Disney Lorcana events. Use when the user asks for stores, venues, or places to play. Pass search (name) and/or latitude+longitude+radius_miles; you can pass both. No location = first page of all stores.",
+        "Search for game stores that host Disney Lorcana events. Use when the user asks for stores, venues, or places to play. Pass search (name) and/or latitude+longitude+radius_miles; you can pass both. No location = first page of all stores. Optional store_type narrows results (e.g. organizedPlay).",
       inputSchema: {
         search: z.string().optional().describe("Search by store name (e.g. 'game' or store name)"),
         latitude: z.number().optional().describe("Latitude for location search (use with longitude and radius_miles)"),
         longitude: z.number().optional().describe("Longitude for location search (use with latitude and radius_miles)"),
         radius_miles: z.number().default(25).describe("Radius in miles when using lat/long (default: 25)"),
+        store_type: z
+          .enum(STORE_TYPES)
+          .optional()
+          .describe("Optional store type filter: physicalRetailer, onlineRetailer, physicalAndOnlineRetailer, organizedPlay, partner"),
         page: z.number().default(1).describe("Page number (default: 1)"),
         page_size: z.number().default(25).describe("Results per page, max 100 (default: 25)"),
       },
@@ -38,6 +49,9 @@ export function registerStoreTools(server: McpServer): void {
         params.latitude = args.latitude.toString();
         params.longitude = args.longitude.toString();
         params.num_miles = args.radius_miles.toString();
+      }
+      if (args.store_type) {
+        params.game_store_type = args.store_type;
       }
 
       try {
@@ -79,6 +93,41 @@ export function registerStoreTools(server: McpServer): void {
     }
   );
 
+  // Tool: Get Store Details
+  server.registerTool(
+    "get_store_details",
+    {
+      description:
+        "Get full profile details for a store by game_store_id (UUID). Use when the user asks for one store's detailed info (bio, links, contact, types). The game_store_id is included in search_stores results.",
+      inputSchema: {
+        game_store_id: z.string().describe("Game store ID (UUID) from search_stores, e.g. 6cb0ce43-309a-4759-a5c3-142a44b08614"),
+      },
+    },
+    async (args) => {
+      try {
+        const store = await fetchStoreDetails(args.game_store_id);
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: formatStore(store),
+            },
+          ],
+        };
+      } catch (error) {
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: `Error fetching store details: ${error instanceof Error ? error.message : String(error)}`,
+            },
+          ],
+          isError: true,
+        };
+      }
+    }
+  );
+
   // Tool: Search Stores by City
   server.registerTool(
     "search_stores_by_city",
@@ -88,29 +137,18 @@ export function registerStoreTools(server: McpServer): void {
       inputSchema: {
         city: z.string().describe("City name, ideally with state/country (e.g. 'Detroit, MI' or 'New York, NY')"),
         radius_miles: z.number().default(25).describe("Radius in miles (default: 25)"),
+        store_type: z
+          .enum(STORE_TYPES)
+          .optional()
+          .describe("Optional store type filter: physicalRetailer, onlineRetailer, physicalAndOnlineRetailer, organizedPlay, partner"),
         page: z.number().default(1).describe("Page number (default: 1)"),
         page_size: z.number().default(25).describe("Results per page, max 100 (default: 25)"),
       },
     },
     async (args) => {
-      const geocodeUrl = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(args.city)}&format=json&limit=1`;
-
       try {
-        const geoResponse = await fetchWithRetry(geocodeUrl, {
-          headers: { "User-Agent": "lorcana-event-finder/1.0" },
-        });
-
-        if (!geoResponse.ok) {
-          throw new Error("Geocoding failed");
-        }
-
-        const geoData = (await geoResponse.json()) as Array<{
-          lat: string;
-          lon: string;
-          display_name: string;
-        }>;
-
-        if (!geoData || geoData.length === 0) {
+        const location = await geocodeAddress(args.city);
+        if (!location) {
           return {
             content: [
               {
@@ -122,9 +160,8 @@ export function registerStoreTools(server: McpServer): void {
           };
         }
 
-        const location = geoData[0];
-        const latitude = parseFloat(location.lat);
-        const longitude = parseFloat(location.lon);
+        const latitude = location.address.lat;
+        const longitude = location.address.lng;
 
         const params: Record<string, string> = {
           latitude: latitude.toString(),
@@ -133,6 +170,9 @@ export function registerStoreTools(server: McpServer): void {
           page: args.page.toString(),
           page_size: Math.min(args.page_size, 100).toString(),
         };
+        if (args.store_type) {
+          params.game_store_type = args.store_type;
+        }
 
         const response = await fetchStores(params);
 
@@ -141,7 +181,7 @@ export function registerStoreTools(server: McpServer): void {
             content: [
               {
                 type: "text" as const,
-                text: `No stores found near ${location.display_name} within ${args.radius_miles} miles.`,
+                text: `No stores found near ${location.address.formattedAddress} within ${args.radius_miles} miles.`,
               },
             ],
           };
@@ -149,7 +189,7 @@ export function registerStoreTools(server: McpServer): void {
 
         const formattedStores = response.results.map(formatStore).join("\n\n---\n\n");
         const totalPages = Math.ceil(response.count / args.page_size);
-        const summary = `Found ${response.count} store(s) near ${location.display_name}. Showing ${response.results.length} (page ${args.page} of ${totalPages}).`;
+        const summary = `Found ${response.count} store(s) near ${location.address.formattedAddress}. Showing ${response.results.length} (page ${args.page} of ${totalPages}).`;
 
         return {
           content: [

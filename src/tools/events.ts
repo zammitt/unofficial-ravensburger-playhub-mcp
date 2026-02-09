@@ -12,6 +12,7 @@ import {
   fetchEvents,
   fetchTournamentRoundMatches,
   fetchTournamentRoundStandings,
+  geocodeAddress,
   resolveCategoryIdsStrict,
   resolveFormatIdsStrict,
   STATUSES,
@@ -25,7 +26,6 @@ import {
   parseRecordToWinsLosses,
 } from "../lib/formatters.js";
 import type { LeaderboardResult, PlayerStats, StandingEntry } from "../lib/types.js";
-import { fetchWithRetry } from "../lib/http.js";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const DATE_ONLY_RE = /^(\d{4})-(\d{2})-(\d{2})$/;
@@ -541,7 +541,6 @@ export function registerEventTools(server: McpServer): void {
     },
     async (args) => {
       const effectivePageSize = Math.min(args.page_size, 100);
-      const geocodeUrl = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(args.city)}&format=json&limit=1`;
 
       try {
         const dateRange = parseSearchDateRange(args.start_date, args.end_date);
@@ -576,23 +575,8 @@ export function registerEventTools(server: McpServer): void {
           }
         }
 
-        const geoResponse = await fetchWithRetry(geocodeUrl, {
-          headers: {
-            "User-Agent": "lorcana-event-finder/1.0",
-          },
-        });
-
-        if (!geoResponse.ok) {
-          throw new Error("Geocoding failed");
-        }
-
-        const geoData = (await geoResponse.json()) as Array<{
-          lat: string;
-          lon: string;
-          display_name: string;
-        }>;
-
-        if (!geoData || geoData.length === 0) {
+        const location = await geocodeAddress(args.city);
+        if (!location) {
           return {
             content: [
               {
@@ -604,9 +588,8 @@ export function registerEventTools(server: McpServer): void {
           };
         }
 
-        const location = geoData[0];
-        const latitude = parseFloat(location.lat);
-        const longitude = parseFloat(location.lon);
+        const latitude = location.address.lat;
+        const longitude = location.address.lng;
 
         const params: Record<string, string | string[]> = {
           game_slug: "disney-lorcana",
@@ -643,14 +626,14 @@ export function registerEventTools(server: McpServer): void {
             content: [
               {
                 type: "text" as const,
-                text: `No events found near ${location.display_name} within ${args.radius_miles} miles. Try expanding your search radius or adjusting filters.`,
+                text: `No events found near ${location.address.formattedAddress} within ${args.radius_miles} miles. Try expanding your search radius or adjusting filters.`,
               },
             ],
           };
         }
 
         const formattedEvents = response.results.map(formatEvent).join("\n\n---\n\n");
-        const summary = `Found ${response.count} event(s) near ${location.display_name}. Showing ${response.results.length} (page ${args.page} of ${Math.ceil(response.count / effectivePageSize)}).`;
+        const summary = `Found ${response.count} event(s) near ${location.address.formattedAddress}. Showing ${response.results.length} (page ${args.page} of ${Math.ceil(response.count / effectivePageSize)}).`;
 
         return {
           content: [
@@ -919,26 +902,16 @@ export function registerEventTools(server: McpServer): void {
           }
         }
 
-        const geocodeUrl = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(cityTrimmed)}&format=json&limit=1`;
-        const geoResponse = await fetchWithRetry(geocodeUrl, {
-          headers: { "User-Agent": "lorcana-event-finder/1.0" },
-        });
-        if (!geoResponse.ok) {
-          return {
-            content: [{ type: "text" as const, text: `Could not geocode city: ${cityTrimmed}` }],
-            isError: true,
-          };
-        }
-        const geoData = (await geoResponse.json()) as Array<{ lat: string; lon: string; display_name: string }>;
-        if (!geoData?.length) {
+        const geocoded = await geocodeAddress(cityTrimmed);
+        if (!geocoded) {
           return {
             content: [{ type: "text" as const, text: `Could not find location: ${cityTrimmed}. Try being more specific (e.g. "Detroit, MI, USA").` }],
             isError: true,
           };
         }
-        const latitude = parseFloat(geoData[0].lat);
-        const longitude = parseFloat(geoData[0].lon);
-        const displayCity = geoData[0].display_name;
+        const latitude = geocoded.address.lat;
+        const longitude = geocoded.address.lng;
+        const displayCity = geocoded.address.formattedAddress;
 
         const params: Record<string, string | string[]> = {
           game_slug: "disney-lorcana",
