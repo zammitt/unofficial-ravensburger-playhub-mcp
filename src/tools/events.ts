@@ -775,7 +775,7 @@ export function registerEventTools(server: McpServer): void {
 
   // Constants for get_player_leaderboard
   const MAX_RADIUS_MILES = 100;
-  const MAX_DATE_RANGE_DAYS = 365;
+  const MAX_DATE_RANGE_DAYS = 366;
   const MAX_LEADERBOARD_LIMIT = 100;
   const SORT_OPTIONS = ["total_wins", "events_played", "win_rate", "best_placement"] as const;
 
