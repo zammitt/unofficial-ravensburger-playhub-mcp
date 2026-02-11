@@ -1,0 +1,233 @@
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - navigation [ref=e3]:
+      - generic [ref=e5]:
+        - link "Logo Ravensburger Play Hub" [ref=e7] [cursor=pointer]:
+          - /url: /
+          - img "Logo" [ref=e9]
+          - generic [ref=e10]: Ravensburger Play Hub
+        - navigation [ref=e11]:
+          - link "Events" [ref=e12] [cursor=pointer]:
+            - /url: /events
+          - link "Stores" [ref=e13] [cursor=pointer]:
+            - /url: /stores/search
+        - link "Login" [ref=e15] [cursor=pointer]:
+          - /url: /djauth/login
+          - button "Login" [ref=e16]
+    - main [ref=e18]:
+      - generic [ref=e20]:
+        - link "All Events" [ref=e22] [cursor=pointer]:
+          - /url: /events
+        - generic [ref=e24]:
+          - complementary [ref=e25]:
+            - generic [ref=e27]:
+              - generic [ref=e28]:
+                - img [ref=e30]
+                - searchbox "Search" [ref=e33]
+              - generic [ref=e34]:
+                - generic [ref=e35]:
+                  - img [ref=e37]
+                  - generic [ref=e39]: When
+                  - generic [ref=e40]: "1"
+                - generic [ref=e41]:
+                  - button "Upcoming" [ref=e42]
+                  - button "Live" [ref=e43]
+                  - button "Past" [ref=e44]
+                - button "From Feb 6" [ref=e45] [cursor=pointer]:
+                  - img [ref=e47]
+                  - generic [ref=e50]: From Feb 6
+              - generic [ref=e51]:
+                - generic [ref=e52]:
+                  - img [ref=e54]
+                  - generic [ref=e57]: Where
+                - generic [ref=e58]:
+                  - generic [ref=e59]:
+                    - button "Near Me" [disabled]:
+                      - img
+                      - generic: Near Me
+                  - button "Address" [ref=e60] [cursor=pointer]:
+                    - img
+                    - generic [ref=e61]: Address
+                  - button "Store" [ref=e62] [cursor=pointer]:
+                    - img
+                    - generic [ref=e63]: Store
+              - generic [ref=e64]:
+                - generic [ref=e65]:
+                  - img [ref=e67]
+                  - generic [ref=e73]: Format
+                - generic [ref=e74]:
+                  - button "Core Constructed" [ref=e75]
+                  - button "Infinity Constructed" [ref=e76]
+                  - button "Draft" [ref=e77]
+                  - button "Sealed" [ref=e78]
+                  - button "Pack Rush" [ref=e79]
+                  - button "Other" [ref=e80]
+                  - paragraph [ref=e81]: All formats shown
+              - generic [ref=e82]:
+                - generic [ref=e83]:
+                  - img [ref=e85]
+                  - generic [ref=e87]: Category
+                  - generic [ref=e809]: "1"
+                - generic [ref=e88]:
+                  - button "Unstructured / Player List Only" [ref=e89]
+                  - button "Weekly Play (Constructed)" [ref=e90]
+                  - button "Weekly Play (Draft)" [ref=e91]
+                  - button "Weekly Play (Sealed)" [ref=e92]
+                  - button "Winterspell Prerelease - Sealed" [ref=e93]
+                  - button "Winterspell - Set Championship" [ref=e94]
+                  - button "Winterspell Prerelease - Pack Rush" [ref=e95]
+                  - button "Whispers in the Well - Set Championship" [ref=e96]
+                  - button "Clear" [ref=e810]
+              - generic [ref=e98]:
+                - generic [ref=e99]:
+                  - img [ref=e101]
+                  - generic [ref=e104]: Options
+                - button "Show Featured" [ref=e105]:
+                  - generic [ref=e106]: Show Featured
+              - button "Reset Filters" [ref=e111] [cursor=pointer]:
+                - img
+                - generic [ref=e112]: Reset Filters
+          - main [ref=e113]:
+            - generic [ref=e114]:
+              - generic [ref=e116]:
+                - generic [ref=e117]:
+                  - button "Locals this week" [ref=e118] [cursor=pointer]
+                  - button "Drivable Set Championships" [active] [ref=e119] [cursor=pointer]
+                - generic [ref=e120]:
+                  - button "List" [ref=e121] [cursor=pointer]:
+                    - img
+                    - generic [ref=e122]: List
+                  - button "Grid" [ref=e123] [cursor=pointer]:
+                    - img
+                    - generic [ref=e124]: Grid
+                  - button "Calendar" [ref=e125] [cursor=pointer]:
+                    - img
+                    - generic [ref=e126]: Calendar
+              - generic [ref=e127]:
+                - generic [ref=e128]:
+                  - generic [ref=e129]: "Date:"
+                  - generic [ref=e130]: From Feb 6
+                  - button "Remove Date filter" [ref=e131]:
+                    - img [ref=e132]
+                - generic [ref=e256]:
+                  - generic [ref=e257]: Upcoming
+                  - button "Remove Upcoming filter" [ref=e258]:
+                    - img [ref=e259]
+                - generic [ref=e135]:
+                  - generic [ref=e136]: "Location:"
+                  - generic [ref=e137]: Current location
+                  - button "Remove Location filter" [ref=e138]:
+                    - img [ref=e139]
+                - generic [ref=e142]:
+                  - generic [ref=e143]: "Distance:"
+                  - generic [ref=e144]: 100 mi
+                  - button "Remove Distance filter" [ref=e145]:
+                    - img [ref=e146]
+            - generic [ref=e263]:
+              - link [ref=e811] [cursor=pointer]:
+                - /url: /events/378512
+                - article [ref=e812]:
+                  - generic [ref=e813]:
+                    - generic [ref=e815]: APR 4 • 12:00 PM (EDT)
+                    - generic [ref=e817]: Upcoming
+                  - heading "Winterspell - Set Championship" [level=3] [ref=e818]
+                  - generic [ref=e819]:
+                    - generic [ref=e820]:
+                      - img [ref=e821]
+                      - generic [ref=e826]: The POP Shop
+                    - generic [ref=e827]:
+                      - img [ref=e828]
+                      - generic [ref=e831]: 3104 Milan Road, Sandusky, OH, 44870, US
+                    - generic [ref=e832]:
+                      - img [ref=e833]
+                      - generic [ref=e839]: Core Constructed
+                    - generic [ref=e840]:
+                      - img [ref=e841]
+                      - generic [ref=e843]: Winterspell - Set Championship
+                    - generic [ref=e844]: Free
+              - link [ref=e845] [cursor=pointer]:
+                - /url: /events/369604
+                - article [ref=e846]:
+                  - generic [ref=e847]:
+                    - generic [ref=e849]: APR 5 • 4:30 PM (EDT)
+                    - generic [ref=e851]: Upcoming
+                  - heading "Sunday Evening Winterspell - Set Championship" [level=3] [ref=e852]
+                  - generic [ref=e853]:
+                    - generic [ref=e854]:
+                      - img [ref=e855]
+                      - generic [ref=e860]: MIHobbyCenter
+                    - generic [ref=e861]:
+                      - img [ref=e862]
+                      - generic [ref=e865]: 30555, Dequindre Rd, Madison Heights, MI, 48071, US
+                    - generic [ref=e866]:
+                      - img [ref=e867]
+                      - generic [ref=e873]: Core Constructed
+                    - generic [ref=e874]:
+                      - img [ref=e875]
+                      - generic [ref=e877]: Winterspell - Set Championship
+                    - generic [ref=e878]: $30.00
+              - link [ref=e775] [cursor=pointer]:
+                - /url: /events/365509
+                - article [ref=e776]:
+                  - generic [ref=e777]:
+                    - generic [ref=e779]: APR 5 • 6:30 PM (EDT)
+                    - generic [ref=e781]: Upcoming
+                  - heading "Sunday Night Winterspell - Set Championship" [level=3] [ref=e782]
+                  - generic [ref=e783]:
+                    - generic [ref=e784]:
+                      - img [ref=e785]
+                      - generic [ref=e790]: The Upkeep Games Canton
+                    - generic [ref=e791]:
+                      - img [ref=e792]
+                      - generic [ref=e795]: 43675 Ford Rd, Canton, MI, 48187, US
+                    - generic [ref=e796]:
+                      - img [ref=e797]
+                      - generic [ref=e803]: Core Constructed
+                    - generic [ref=e804]:
+                      - img [ref=e805]
+                      - generic [ref=e807]: Winterspell - Set Championship
+                    - generic [ref=e808]: $10.00
+              - link [ref=e879] [cursor=pointer]:
+                - /url: /events/357450
+                - article [ref=e880]:
+                  - generic [ref=e881]:
+                    - generic [ref=e883]: APR 11 • 12:00 PM (EDT)
+                    - generic [ref=e885]: Upcoming
+                  - heading "Saturday Afternoon Winterspell - Set Championship" [level=3] [ref=e886]
+                  - generic [ref=e887]:
+                    - generic [ref=e888]:
+                      - img [ref=e889]
+                      - generic [ref=e894]: All Tapped Out Gaming
+                    - generic [ref=e895]:
+                      - img [ref=e896]
+                      - generic [ref=e899]: 8 Mill Street West, Leamington, ON, N8H 3A8, CA
+                    - generic [ref=e900]:
+                      - img [ref=e901]
+                      - generic [ref=e907]: Core Constructed
+                    - generic [ref=e908]:
+                      - img [ref=e909]
+                      - generic [ref=e911]: Winterspell - Set Championship
+                    - generic [ref=e912]: CA$20.00
+              - link [ref=e913] [cursor=pointer]:
+                - /url: /events/369243
+                - article [ref=e914]:
+                  - generic [ref=e915]:
+                    - generic [ref=e917]: APR 19 • 1:00 PM (EDT)
+                    - generic [ref=e919]: Upcoming
+                  - heading "Sunday Evening Winterspell - Set Championship" [level=3] [ref=e920]
+                  - generic [ref=e921]:
+                    - generic [ref=e922]:
+                      - img [ref=e923]
+                      - generic [ref=e928]: Scots Toys
+                    - generic [ref=e929]:
+                      - img [ref=e930]
+                      - generic [ref=e933]: 2 South Washington Street, OXFORD, MI, 48371-4971, US
+                    - generic [ref=e934]:
+                      - img [ref=e935]
+                      - generic [ref=e941]: Core Constructed
+                    - generic [ref=e942]:
+                      - img [ref=e943]
+                      - generic [ref=e945]: Winterspell - Set Championship
+                    - generic [ref=e946]: $20.00
+  - region "Notifications alt+T"
+  - alert [ref=e255]

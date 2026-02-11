@@ -1,0 +1,134 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - generic [ref=e4]:
+      - generic [ref=e5]: We value your privacy
+      - generic [ref=e6]:
+        - text: We use cookies to enhance your browsing experience and analyze our traffic. By clicking "Accept all," you consent to our use of cookies.
+        - link "Learn more" [ref=e7] [cursor=pointer]:
+          - /url: https://www.carde.io/privacy#Cookies-Other-Tracking-Tech
+    - generic [ref=e8]:
+      - button "Accept all" [ref=e9] [cursor=pointer]
+      - button "Reject all" [ref=e10] [cursor=pointer]
+  - generic [ref=e11]:
+    - navigation [ref=e12]:
+      - generic [ref=e14]:
+        - link "Logo Ravensburger Play Hub" [ref=e16] [cursor=pointer]:
+          - /url: /
+          - img "Logo" [ref=e18]
+          - generic [ref=e19]: Ravensburger Play Hub
+        - navigation [ref=e20]:
+          - link "Events" [ref=e21] [cursor=pointer]:
+            - /url: /events
+          - link "Stores" [ref=e22] [cursor=pointer]:
+            - /url: /stores/search
+        - link "Login" [ref=e24] [cursor=pointer]:
+          - /url: /djauth/login
+          - button "Login" [ref=e25]
+    - main [ref=e27]:
+      - main [ref=e28]:
+        - generic [ref=e30]:
+          - generic [ref=e31]:
+            - heading "Welcome to the Ravensburger Play Hub" [level=1] [ref=e32]
+            - paragraph [ref=e33]: To get started, create your Ravensburger Play profile, personalize it with your favorite inks, and then familiarize yourself with the tournament tools by finding your local store and registering for your first event.
+          - img "Welcome to the Ravensburger Play Hub" [ref=e35]
+        - generic [ref=e37]:
+          - complementary [ref=e38]:
+            - generic [ref=e40]:
+              - generic [ref=e41]:
+                - img [ref=e43]
+                - searchbox "Search" [ref=e46]
+              - generic [ref=e47]:
+                - generic [ref=e48]:
+                  - img [ref=e50]
+                  - generic [ref=e52]: When
+                  - generic [ref=e53]: "1"
+                - generic [ref=e54]:
+                  - button "Upcoming" [ref=e55]
+                  - button "Live" [ref=e56]
+                  - button "Past" [ref=e57]
+                - button "From Feb 6" [ref=e58] [cursor=pointer]:
+                  - img [ref=e60]
+                  - generic [ref=e63]: From Feb 6
+              - generic [ref=e64]:
+                - generic [ref=e65]:
+                  - img [ref=e67]
+                  - generic [ref=e70]: Where
+                - generic [ref=e71]:
+                  - button "Near Me" [ref=e72] [cursor=pointer]:
+                    - img
+                    - generic [ref=e73]: Near Me
+                  - button "Address" [ref=e74] [cursor=pointer]:
+                    - img
+                    - generic [ref=e75]: Address
+                  - button "Store" [ref=e76] [cursor=pointer]:
+                    - img
+                    - generic [ref=e77]: Store
+              - generic [ref=e78]:
+                - generic [ref=e79]:
+                  - img [ref=e81]
+                  - generic [ref=e87]: Format
+                - generic [ref=e88]:
+                  - button "Core Constructed" [ref=e89]
+                  - button "Infinity Constructed" [ref=e90]
+                  - button "Draft" [ref=e91]
+                  - button "Sealed" [ref=e92]
+                  - button "Pack Rush" [ref=e93]
+                  - button "Other" [ref=e94]
+                  - paragraph [ref=e95]: All formats shown
+              - generic [ref=e96]:
+                - generic [ref=e97]:
+                  - img [ref=e99]
+                  - generic [ref=e101]: Category
+                - generic [ref=e102]:
+                  - button "Unstructured / Player List Only" [ref=e103]
+                  - button "Weekly Play (Constructed)" [ref=e104]
+                  - button "Weekly Play (Draft)" [ref=e105]
+                  - button "Weekly Play (Sealed)" [ref=e106]
+                  - button "Winterspell Prerelease - Sealed" [ref=e107]
+                  - button "Winterspell - Set Championship" [ref=e108]
+                  - button "Winterspell Prerelease - Pack Rush" [ref=e109]
+                  - button "Whispers in the Well - Set Championship" [ref=e110]
+                  - paragraph [ref=e111]: All categories shown
+              - generic [ref=e112]:
+                - generic [ref=e113]:
+                  - img [ref=e115]
+                  - generic [ref=e118]: Options
+                - button "Show Featured" [ref=e119]:
+                  - generic [ref=e120]: Show Featured
+              - button "Reset Filters" [ref=e125] [cursor=pointer]:
+                - img
+                - generic [ref=e126]: Reset Filters
+          - main [ref=e127]:
+            - generic [ref=e128]:
+              - generic [ref=e130]:
+                - generic [ref=e131]:
+                  - button "Locals this week" [ref=e132] [cursor=pointer]
+                  - button "Drivable Set Championships" [ref=e133] [cursor=pointer]
+                - generic [ref=e134]:
+                  - button "List" [ref=e135] [cursor=pointer]:
+                    - img
+                    - generic [ref=e136]: List
+                  - button "Grid" [ref=e137] [cursor=pointer]:
+                    - img
+                    - generic [ref=e138]: Grid
+                  - button "Calendar" [ref=e139] [cursor=pointer]:
+                    - img
+                    - generic [ref=e140]: Calendar
+              - generic [ref=e141]:
+                - generic [ref=e142]:
+                  - generic [ref=e143]: "Date:"
+                  - generic [ref=e144]: From Feb 6
+                  - button "Remove Date filter" [ref=e145]:
+                    - img [ref=e146]
+                - generic [ref=e149]:
+                  - generic [ref=e150]: "Location:"
+                  - generic [ref=e151]: Current location
+                  - button "Remove Location filter" [ref=e152]:
+                    - img [ref=e153]
+                - generic [ref=e156]:
+                  - generic [ref=e157]: "Distance:"
+                  - generic [ref=e158]: 25 mi
+                  - button "Remove Distance filter" [ref=e159]:
+                    - img [ref=e160]
+  - region "Notifications alt+T"
+  - alert [ref=e269]

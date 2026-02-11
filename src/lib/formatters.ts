@@ -263,6 +263,7 @@ export function formatLeaderboard(result: LeaderboardResult, sortLabel: string):
   if (result.filters?.store) filterParts.push(`at ${result.filters.store}`);
   if (result.filters?.categories?.length) filterParts.push(result.filters.categories.join(", "));
   if (result.filters?.formats?.length) filterParts.push(result.filters.formats.join(", "));
+  if (result.filters?.minRounds) filterParts.push(`min ${result.filters.minRounds} rounds`);
   const filterStr = filterParts.length > 0 ? ` (${filterParts.join(" | ")})` : "";
 
   lines.push(`Player Leaderboard${filterStr}`);

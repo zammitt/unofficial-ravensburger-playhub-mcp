@@ -1,0 +1,19 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - navigation [ref=e3]:
+      - generic [ref=e5]:
+        - link "Logo Ravensburger Play Hub" [ref=e7] [cursor=pointer]:
+          - /url: /
+          - img "Logo" [ref=e9]
+          - generic [ref=e10]: Ravensburger Play Hub
+        - navigation [ref=e11]:
+          - link "Events" [ref=e12] [cursor=pointer]:
+            - /url: /events
+          - link "Stores" [ref=e13] [cursor=pointer]:
+            - /url: /stores/search
+        - link "Login" [ref=e15] [cursor=pointer]:
+          - /url: /djauth/login
+          - button "Login" [ref=e16]
+    - main [ref=e18]
+  - region "Notifications alt+T"
+  - alert [ref=e66]

@@ -775,7 +775,7 @@ export function registerEventTools(server: McpServer): void {
 
   // Constants for get_player_leaderboard
   const MAX_RADIUS_MILES = 100;
-  const MAX_DATE_RANGE_DAYS = 93;
+  const MAX_DATE_RANGE_DAYS = 365;
   const MAX_LEADERBOARD_LIMIT = 100;
   const SORT_OPTIONS = ["total_wins", "events_played", "win_rate", "best_placement"] as const;
 
@@ -831,7 +831,7 @@ export function registerEventTools(server: McpServer): void {
     "get_player_leaderboard",
     {
       description:
-        "Aggregate player performance across multiple past and in-progress events and return a leaderboard. Use when the user asks who had the most wins, best record, or top performers in a region and date range (e.g. 'who had the most wins in set championships in January 2026 in Detroit'). Single tool call replaces many search_events + get_event_standings calls. Call list_filters first to get valid format/category names. Date range limited to 3 months; radius limited to 100 miles.",
+        "Aggregate player performance across multiple past and in-progress events and return a leaderboard. Use when the user asks who had the most wins, best record, or top performers in a region and date range (e.g. 'who had the most wins in set championships in January 2026 in Detroit'). Single tool call replaces many search_events + get_event_standings calls. Call list_filters first to get valid format/category names. Date range limited to 1 year; radius limited to 100 miles.",
       inputSchema: {
         city: z.string().min(1).describe("City name, ideally with state/country (e.g. 'Detroit, MI')"),
         radius_miles: z.number().min(0).max(MAX_RADIUS_MILES).default(50).describe(`Search radius in miles (default: 50, max: ${MAX_RADIUS_MILES})`),
@@ -842,6 +842,8 @@ export function registerEventTools(server: McpServer): void {
         sort_by: z.enum(SORT_OPTIONS).default("total_wins").describe("Sort order: total_wins, events_played, win_rate, best_placement"),
         limit: z.number().min(1).max(MAX_LEADERBOARD_LIMIT).default(20).describe(`Number of top players to return (default: 20, max: ${MAX_LEADERBOARD_LIMIT})`),
         min_events: z.number().min(1).default(1).describe("Minimum events a player must have played to appear (default: 1)"),
+        min_rounds: z.number().int().min(1).optional()
+          .describe("Minimum total tournament rounds an event must have to be included (e.g., 4 to exclude small leagues)"),
       },
     },
     async (args) => {
@@ -871,7 +873,7 @@ export function registerEventTools(server: McpServer): void {
         const daysDiff = Math.floor((end.getTime() - start.getTime()) / DAY_MS);
         if (daysDiff > MAX_DATE_RANGE_DAYS) {
           return {
-            content: [{ type: "text" as const, text: `Date range cannot exceed ${MAX_DATE_RANGE_DAYS} days (about 3 months).` }],
+            content: [{ type: "text" as const, text: `Date range cannot exceed ${MAX_DATE_RANGE_DAYS} days (about 1 year).` }],
             isError: true,
           };
         }
@@ -956,6 +958,15 @@ export function registerEventTools(server: McpServer): void {
         }
 
         const eventStandings = await fetchAllEventStandings(allEvents.map((e) => e.id));
+        let filteredStandings = eventStandings;
+        if (args.min_rounds) {
+          filteredStandings = filteredStandings.filter(({ event }) => {
+            const totalRounds = (event.tournament_phases ?? []).reduce(
+              (sum: number, phase) => sum + (phase.rounds?.length ?? 0), 0
+            );
+            return totalRounds >= args.min_rounds!;
+          });
+        }
         const agg = new Map<
           string,
           {
@@ -968,7 +979,7 @@ export function registerEventTools(server: McpServer): void {
           }
         >();
 
-        for (const { event, standings } of eventStandings) {
+        for (const { event, standings } of filteredStandings) {
           for (let i = 0; i < standings.length; i++) {
             const entry = standings[i];
             const key = standingPlayerKey(entry);
@@ -1054,8 +1065,8 @@ export function registerEventTools(server: McpServer): void {
 
         const result: LeaderboardResult = {
           players,
-          eventsAnalyzed: eventStandings.length,
-          eventsIncluded: eventStandings.map(({ event }) => ({
+          eventsAnalyzed: filteredStandings.length,
+          eventsIncluded: filteredStandings.map(({ event }) => ({
             id: event.id,
             name: event.name,
             startDate: event.start_datetime,
@@ -1065,6 +1076,7 @@ export function registerEventTools(server: McpServer): void {
             city: displayCity,
             categories: args.categories?.length ? args.categories : undefined,
             formats: args.formats?.length ? args.formats : undefined,
+            minRounds: args.min_rounds,
           },
         };
 
@@ -1091,7 +1103,7 @@ export function registerEventTools(server: McpServer): void {
     "get_player_leaderboard_by_store",
     {
       description:
-        "Aggregate player performance across past and in-progress events at a specific store and return a leaderboard. Use when the user asks who had the most wins or top performers at a particular store (e.g. 'leaderboard at Game Haven', 'best players at store 123'). Get store ID from search_stores. Date range limited to 3 months.",
+        "Aggregate player performance across past and in-progress events at a specific store and return a leaderboard. Use when the user asks who had the most wins or top performers at a particular store (e.g. 'leaderboard at Game Haven', 'best players at store 123'). Get store ID from search_stores. Date range limited to 1 year.",
       inputSchema: {
         store_id: z.number().describe("Store ID (from search_stores)"),
         start_date: z.string().describe("Start of date range (YYYY-MM-DD)"),
@@ -1101,6 +1113,8 @@ export function registerEventTools(server: McpServer): void {
         sort_by: z.enum(SORT_OPTIONS).default("total_wins").describe("Sort order: total_wins, events_played, win_rate, best_placement"),
         limit: z.number().min(1).max(MAX_LEADERBOARD_LIMIT).default(20).describe(`Number of top players to return (default: 20, max: ${MAX_LEADERBOARD_LIMIT})`),
         min_events: z.number().min(1).default(1).describe("Minimum events a player must have played to appear (default: 1)"),
+        min_rounds: z.number().int().min(1).optional()
+          .describe("Minimum total tournament rounds an event must have to be included (e.g., 4 to exclude small leagues)"),
       },
     },
     async (args) => {
@@ -1122,7 +1136,7 @@ export function registerEventTools(server: McpServer): void {
         const daysDiff = Math.floor((end.getTime() - start.getTime()) / DAY_MS);
         if (daysDiff > MAX_DATE_RANGE_DAYS) {
           return {
-            content: [{ type: "text" as const, text: `Date range cannot exceed ${MAX_DATE_RANGE_DAYS} days (about 3 months).` }],
+            content: [{ type: "text" as const, text: `Date range cannot exceed ${MAX_DATE_RANGE_DAYS} days (about 1 year).` }],
             isError: true,
           };
         }
@@ -1198,6 +1212,15 @@ export function registerEventTools(server: McpServer): void {
         }
 
         const eventStandings = await fetchAllEventStandings(allEvents.map((e) => e.id));
+        let filteredStandings = eventStandings;
+        if (args.min_rounds) {
+          filteredStandings = filteredStandings.filter(({ event }) => {
+            const totalRounds = (event.tournament_phases ?? []).reduce(
+              (sum: number, phase) => sum + (phase.rounds?.length ?? 0), 0
+            );
+            return totalRounds >= args.min_rounds!;
+          });
+        }
         const agg = new Map<
           string,
           {
@@ -1210,7 +1233,7 @@ export function registerEventTools(server: McpServer): void {
           }
         >();
 
-        for (const { event, standings } of eventStandings) {
+        for (const { event, standings } of filteredStandings) {
           for (let i = 0; i < standings.length; i++) {
             const entry = standings[i];
             const key = standingPlayerKey(entry);
@@ -1296,8 +1319,8 @@ export function registerEventTools(server: McpServer): void {
 
         const result: LeaderboardResult = {
           players,
-          eventsAnalyzed: eventStandings.length,
-          eventsIncluded: eventStandings.map(({ event }) => ({
+          eventsAnalyzed: filteredStandings.length,
+          eventsIncluded: filteredStandings.map(({ event }) => ({
             id: event.id,
             name: event.name,
             startDate: event.start_datetime,
@@ -1307,6 +1330,7 @@ export function registerEventTools(server: McpServer): void {
             store: storeName ?? `Store ${args.store_id}`,
             categories: args.categories?.length ? args.categories : undefined,
             formats: args.formats?.length ? args.formats : undefined,
+            minRounds: args.min_rounds,
           },
         };
 

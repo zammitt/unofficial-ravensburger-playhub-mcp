@@ -1,0 +1,267 @@
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - navigation [ref=e3]:
+      - generic [ref=e5]:
+        - link "Logo Ravensburger Play Hub" [ref=e7] [cursor=pointer]:
+          - /url: /
+          - img "Logo" [ref=e9]
+          - generic [ref=e10]: Ravensburger Play Hub
+        - navigation [ref=e11]:
+          - link "Events" [ref=e12] [cursor=pointer]:
+            - /url: /events
+          - link "Stores" [ref=e13] [cursor=pointer]:
+            - /url: /stores/search
+        - link "Login" [ref=e15] [cursor=pointer]:
+          - /url: /djauth/login
+          - button "Login" [ref=e16]
+    - main [ref=e18]:
+      - generic [ref=e20]:
+        - generic [ref=e22]:
+          - generic [ref=e23]:
+            - heading "Find Our Stores" [level=1] [ref=e24]
+            - generic [ref=e26]: Beta
+          - paragraph [ref=e27]: Enter your zip code or city below to see stores that carry our games near you! If you don't see any results, try adjusting the distance filters and be sure to click 'Search' when you're adjusting search criteria. Your browser will ask to use your location for more precise results.
+        - generic [ref=e29]:
+          - generic [ref=e30]:
+            - generic [ref=e31]: Location
+            - generic [ref=e32]:
+              - generic [ref=e36]:
+                - img [ref=e38]
+                - generic [ref=e41]: Address autocomplete
+                - textbox "Enter a zip code, city, or address" [active] [ref=e42]: Seattle, WA, USA
+              - button "Use my location" [ref=e43] [cursor=pointer]:
+                - img
+          - generic [ref=e44]:
+            - generic [ref=e45]: Distance
+            - combobox "Distance" [ref=e46]:
+              - generic: 25 miles
+              - img
+          - generic [ref=e47]:
+            - generic [ref=e48]: Store Type
+            - combobox "Store Type" [ref=e49]:
+              - generic: Show All
+              - img
+          - button "Search Stores" [ref=e50] [cursor=pointer]
+        - generic [ref=e63]:
+          - generic [ref=e64]:
+            - generic [ref=e65]:
+              - generic [ref=e66]: Stores
+              - generic [ref=e67]: showing 10 of 26 stores
+            - generic [ref=e68]:
+              - generic [ref=e69]: Click on map to focus store.
+              - generic [ref=e70]:
+                - generic [ref=e72] [cursor=pointer]:
+                  - generic [ref=e75]: Tabletop Village
+                  - generic [ref=e76]:
+                    - generic [ref=e77]:
+                      - img [ref=e78]
+                      - generic [ref=e81]: 616 8th Avenue South, Seattle, WA, 98104, US
+                    - generic [ref=e82]:
+                      - img [ref=e83]
+                      - generic [ref=e86]: Physical Retailer / Organized Play
+                  - generic [ref=e87]:
+                    - link "Store Website" [ref=e88]:
+                      - /url: https://www.tabletopvillage.com/
+                      - text: Store Website
+                      - img [ref=e89]
+                    - link "Store Details" [ref=e93]:
+                      - /url: /stores/2407b108-1a00-4f28-85ca-c49ca884123a
+                      - button "Store Details" [ref=e94]
+                - generic [ref=e96] [cursor=pointer]:
+                  - generic [ref=e99]: Cardceus
+                  - generic [ref=e101]:
+                    - img [ref=e102]
+                    - generic [ref=e105]: 3201, 1st Ave S, Seattle, WA, 98134, US
+                  - generic [ref=e106]:
+                    - link "Store Website" [ref=e107]:
+                      - /url: https://www.Cardceus.com
+                      - text: Store Website
+                      - img [ref=e108]
+                    - link "Store Details" [ref=e112]:
+                      - /url: /stores/f03f9890-306f-4d99-a2db-d1205fa6c258
+                      - button "Store Details" [ref=e113]
+                - generic [ref=e115] [cursor=pointer]:
+                  - generic [ref=e118]: Meeples Games
+                  - generic [ref=e119]:
+                    - generic [ref=e120]:
+                      - img [ref=e121]
+                      - generic [ref=e124]: 3727 California Avenue Southwest, Seattle, WA, 98116, US
+                    - generic [ref=e125]:
+                      - img [ref=e126]
+                      - generic [ref=e129]: Physical Retailer / Organized Play
+                  - link "Store Details" [ref=e131]:
+                    - /url: /stores/c488e790-a24c-46cf-aca0-794712f0039a
+                    - button "Store Details" [ref=e132]
+                - generic [ref=e134] [cursor=pointer]:
+                  - generic [ref=e137]: U Wine Bar
+                  - generic [ref=e139]:
+                    - img [ref=e140]
+                    - generic [ref=e143]: 4455, Stone Way N, Seattle, WA, 98103, US
+                  - generic [ref=e144]:
+                    - link "Store Website" [ref=e145]:
+                      - /url: https://uwinebar.com
+                      - text: Store Website
+                      - img [ref=e146]
+                    - link "Store Details" [ref=e150]:
+                      - /url: /stores/90c726a1-b53a-47ca-b9ec-18f7198f885e
+                      - button "Store Details" [ref=e151]
+                - generic [ref=e153] [cursor=pointer]:
+                  - generic [ref=e156]: Mox Boarding House
+                  - generic [ref=e157]:
+                    - generic [ref=e158]:
+                      - img [ref=e159]
+                      - generic [ref=e162]: 5105 Leary Avenue Northwest, Seattle, WA, 98107, US
+                    - generic [ref=e163]:
+                      - img [ref=e164]
+                      - generic [ref=e167]: Physical and Online Retailer / Organized Play
+                  - generic [ref=e168]:
+                    - link "Store Website" [ref=e169]:
+                      - /url: https://www.moxboardinghouse.com/seattle
+                      - text: Store Website
+                      - img [ref=e170]
+                    - link "Store Details" [ref=e174]:
+                      - /url: /stores/24d1181b-f5e8-4c40-9bb4-3a941cd6bea9
+                      - button "Store Details" [ref=e175]
+                - generic [ref=e177] [cursor=pointer]:
+                  - generic [ref=e180]: Collector's Corner NW
+                  - generic [ref=e181]:
+                    - generic [ref=e182]:
+                      - img [ref=e183]
+                      - generic [ref=e186]: "661 120th Avenue Northeast, Suite #15B, Bellevue, WA, 98005, US"
+                    - generic [ref=e187]:
+                      - img [ref=e188]
+                      - generic [ref=e191]: Physical Retailer / Organized Play
+                  - link "Store Details" [ref=e193]:
+                    - /url: /stores/12e8b039-ccfb-4cb0-b939-0db7612039a0
+                    - button "Store Details" [ref=e194]
+                - generic [ref=e196] [cursor=pointer]:
+                  - generic [ref=e199]: Mox Boarding House Bellevue
+                  - generic [ref=e200]:
+                    - generic [ref=e201]:
+                      - img [ref=e202]
+                      - generic [ref=e205]: 13310 Bel-Red Road, Bellevue, WA, 98005, US
+                    - generic [ref=e206]:
+                      - img [ref=e207]
+                      - generic [ref=e210]: Physical Retailer / Organized Play
+                  - generic [ref=e211]:
+                    - link "Store Website" [ref=e212]:
+                      - /url: https://www.moxboardinghouse.com
+                      - text: Store Website
+                      - img [ref=e213]
+                    - link "Store Details" [ref=e217]:
+                      - /url: /stores/2b677594-4681-436b-a491-3b7d6928332b
+                      - button "Store Details" [ref=e218]
+                - generic [ref=e220] [cursor=pointer]:
+                  - generic [ref=e223]: Over the Brick
+                  - generic [ref=e224]:
+                    - generic [ref=e225]:
+                      - img [ref=e226]
+                      - generic [ref=e229]: 14150 Juanita Drive Northeast, Kirkland, WA, 98034, US
+                    - generic [ref=e230]:
+                      - img [ref=e231]
+                      - generic [ref=e234]: Physical and Online Retailer / Organized Play
+                  - generic [ref=e235]:
+                    - link "Store Website" [ref=e236]:
+                      - /url: https://overthebrick.com
+                      - text: Store Website
+                      - img [ref=e237]
+                    - link "Store Details" [ref=e241]:
+                      - /url: /stores/b65b2736-0b18-4136-940f-8a865280dcb2
+                      - button "Store Details" [ref=e242]
+                - generic [ref=e244] [cursor=pointer]:
+                  - generic [ref=e247]: Shane's Cards
+                  - generic [ref=e248]:
+                    - generic [ref=e249]:
+                      - img [ref=e250]
+                      - generic [ref=e253]: 465 Renton Center Way Southwest, Renton, WA, 98057, US
+                    - generic [ref=e254]:
+                      - img [ref=e255]
+                      - generic [ref=e258]: Physical Retailer / Organized Play
+                  - link "Store Details" [ref=e260]:
+                    - /url: /stores/9d41d61c-a40b-4089-92d9-02c792ffb57a
+                    - button "Store Details" [ref=e261]
+                - generic [ref=e263] [cursor=pointer]:
+                  - generic [ref=e266]: Uncle's Games
+                  - generic [ref=e267]:
+                    - generic [ref=e268]:
+                      - img [ref=e269]
+                      - generic [ref=e272]: 7325 166th Avenue Northeast, f150, Redmond, WA, 98052, US
+                    - generic [ref=e273]:
+                      - img [ref=e274]
+                      - generic [ref=e277]: Physical Retailer / Organized Play
+                  - generic [ref=e278]:
+                    - link "Store Website" [ref=e279]:
+                      - /url: https://www.unclesgames.com/pages/redmond-town-center
+                      - text: Store Website
+                      - img [ref=e280]
+                    - link "Store Details" [ref=e284]:
+                      - /url: /stores/ed27e8ed-88ea-4749-9d2f-5f47c1218ccf
+                      - button "Store Details" [ref=e285]
+            - generic [ref=e286]:
+              - generic [ref=e287]: Showing 1 - 10 of 26 stores
+              - navigation "pagination" [ref=e288]:
+                - list [ref=e289]:
+                  - listitem [ref=e290]:
+                    - link "Go to previous page":
+                      - /url: "#"
+                      - img
+                      - generic: Previous
+                  - listitem [ref=e291]:
+                    - link "1" [ref=e292] [cursor=pointer]:
+                      - /url: "#"
+                  - listitem [ref=e293]:
+                    - link "2" [ref=e294] [cursor=pointer]:
+                      - /url: "#"
+                  - listitem [ref=e295]:
+                    - link "3" [ref=e296] [cursor=pointer]:
+                      - /url: "#"
+                  - listitem [ref=e297]:
+                    - link "Go to next page" [ref=e298] [cursor=pointer]:
+                      - /url: "#"
+                      - generic [ref=e299]: Next
+                      - img
+          - generic [ref=e302]:
+            - generic [ref=e303]:
+              - generic:
+                - button "Keyboard shortcuts"
+              - region "Map" [ref=e304]
+              - generic [ref=e305]:
+                - generic [ref=e381]:
+                  - generic:
+                    - generic:
+                      - button "Tabletop Village" [ref=e383] [cursor=pointer]
+                      - button "Cardceus" [ref=e384] [cursor=pointer]
+                      - button "Meeples Games" [ref=e385] [cursor=pointer]
+                      - button "U Wine Bar" [ref=e386] [cursor=pointer]
+                      - button "Mox Boarding House" [ref=e387] [cursor=pointer]
+                      - button "Collector's Corner NW" [ref=e388] [cursor=pointer]
+                      - button "Mox Boarding House Bellevue" [ref=e389] [cursor=pointer]
+                      - button "Over the Brick" [ref=e390] [cursor=pointer]
+                      - button "Shane's Cards" [ref=e391] [cursor=pointer]
+                      - button "Uncle's Games" [ref=e392] [cursor=pointer]
+                - iframe [ref=e393]:
+                  
+                - generic:
+                  - generic:
+                    - button "Map camera controls" [ref=e395] [cursor=pointer]
+                    - generic [ref=e397] [cursor=pointer]:
+                      - button "Zoom in" [ref=e398]
+                      - button "Zoom out" [ref=e400]
+                - link "Open this area in Google Maps (opens a new window)" [ref=e402] [cursor=pointer]:
+                  - /url: https://maps.google.com/maps?ll=47.618392,-122.269185&z=11&t=m&hl=en&gl=US&mapclient=apiv3
+                  - img "Google" [ref=e404]
+                - generic [ref=e405]:
+                  - button "Keyboard shortcuts" [ref=e411] [cursor=pointer]
+                  - generic [ref=e416]: Map data ©2026 Google
+                  - link "Terms (opens in new tab)" [ref=e421] [cursor=pointer]:
+                    - /url: https://www.google.com/intl/en_US/help/terms_maps.html
+                    - text: Terms
+                  - link "Report a map error" [ref=e426] [cursor=pointer]:
+                    - /url: https://www.google.com/maps/@47.6183925,-122.2691845,11z/data=!10m1!1e1!12b1?source=apiv3&rapsrc=apiv3
+            - generic [ref=e427]:
+              - heading "Store Types" [level=4] [ref=e428]
+              - generic [ref=e431]: Organized Play + Retail
+              - generic [ref=e434]: Retail Only
+              - generic [ref=e437]: Unknown
+  - region "Notifications alt+T"
+  - alert [ref=e54]

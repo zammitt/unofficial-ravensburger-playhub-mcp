@@ -1,0 +1,140 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - navigation [ref=e3]:
+      - generic [ref=e5]:
+        - link "Logo Ravensburger Play Hub" [ref=e7] [cursor=pointer]:
+          - /url: /
+          - img "Logo" [ref=e9]
+          - generic [ref=e10]: Ravensburger Play Hub
+        - navigation [ref=e11]:
+          - link "Events" [ref=e12] [cursor=pointer]:
+            - /url: /events
+          - link "Stores" [ref=e13] [cursor=pointer]:
+            - /url: /stores/search
+        - link "Login" [ref=e15] [cursor=pointer]:
+          - /url: /djauth/login
+          - button "Login" [ref=e16]
+    - main [ref=e18]:
+      - generic [ref=e21]:
+        - main [ref=e22]:
+          - generic [ref=e24]:
+            - heading "Mittwoch Evening Weekly Play (Constructed)" [level=1] [ref=e26]
+            - generic [ref=e27]:
+              - generic [ref=e28]:
+                - img [ref=e29]
+                - generic [ref=e31]: Aug 13, 2025
+              - generic [ref=e32]:
+                - img [ref=e33]
+                - generic [ref=e38]: Heldenwelt
+              - generic [ref=e39]:
+                - img [ref=e40]
+                - generic [ref=e43]: 28 Sternstraße, Erdgeschoss, Magdeburg, SA, 39104, DE
+              - generic [ref=e44]:
+                - img [ref=e45]
+                - generic [ref=e48]: Starts at 12:30 PM (EDT)
+              - generic [ref=e49]:
+                - img [ref=e50]
+                - generic [ref=e55]: 4 players
+        - generic [ref=e58]:
+          - generic [ref=e60]:
+            - generic [ref=e62]:
+              - generic [ref=e63]:
+                - generic [ref=e64]: Time remaining in round
+                - generic [ref=e66]:
+                  - img [ref=e68]
+                  - img [ref=e71]
+              - heading "--:--" [level=2] [ref=e76]
+            - generic [ref=e77]:
+              - generic [ref=e79]:
+                - generic [ref=e80]: Event Details
+                - generic [ref=e82]:
+                  - img [ref=e84]
+                  - img [ref=e87]
+              - generic [ref=e91]:
+                - generic [ref=e92]:
+                  - generic [ref=e93]: START TIME
+                  - generic [ref=e94]: 12:30 PM (EDT)
+                - generic [ref=e95]:
+                  - generic [ref=e96]: EST. END TIME
+                  - generic [ref=e97]: "-"
+                - generic [ref=e98]:
+                  - generic [ref=e99]: PLAYERS
+                  - generic [ref=e100]: 4 players
+            - generic [ref=e101]:
+              - generic [ref=e103]:
+                - generic [ref=e104]: FORMAT
+                - generic [ref=e106]:
+                  - img [ref=e108]
+                  - img [ref=e111]
+              - generic [ref=e116]:
+                - generic [ref=e117]: Tournament Format
+                - generic [ref=e118]: Core Constructed
+          - generic [ref=e119]:
+            - heading "Round 3" [level=1] [ref=e122]
+            - generic [ref=e123]:
+              - heading "Pairings" [level=2] [ref=e124]
+              - generic [ref=e125]:
+                - generic [ref=e126]:
+                  - combobox [ref=e128]:
+                    - generic: Round 3
+                    - img
+                  - generic [ref=e129]:
+                    - img [ref=e130]
+                    - searchbox "Search by name" [ref=e133]
+                - generic [ref=e135]:
+                  - generic [ref=e138]:
+                    - generic [ref=e139]:
+                      - generic [ref=e140]: TABLE
+                      - generic [ref=e141]: "1"
+                    - generic [ref=e142]:
+                      - img "GG_andi99" [ref=e145]
+                      - generic [ref=e147]: GG_andi99
+                    - generic [ref=e149]: "0 : 2"
+                    - generic [ref=e150]:
+                      - generic [ref=e152]: Azunai
+                      - img "Azunai" [ref=e155]
+                  - generic [ref=e158]:
+                    - generic [ref=e159]:
+                      - generic [ref=e160]: TABLE
+                      - generic [ref=e161]: "2"
+                    - generic [ref=e162]:
+                      - img "[FCM] StepHahn90" [ref=e165]
+                      - generic [ref=e167]: "[FCM] StepHahn90"
+                    - generic [ref=e169]: "0 : 2"
+                    - generic [ref=e172]: User18659
+            - generic [ref=e176]:
+              - generic [ref=e177]:
+                - heading "Standings" [level=2] [ref=e178]
+                - generic [ref=e179]:
+                  - switch [ref=e180]
+                  - generic [ref=e181]: Show Tie-Breakers
+              - generic [ref=e182]:
+                - combobox [ref=e184]:
+                  - generic: Round 2
+                  - img
+                - generic [ref=e185]:
+                  - img [ref=e186]
+                  - searchbox "Search by name" [ref=e189]
+              - generic [ref=e191]: Loading standings...
+            - generic [ref=e192]:
+              - heading "Roster" [level=2] [ref=e193]
+              - tablist [ref=e195]:
+                - tab "List View" [selected] [ref=e196]
+              - generic [ref=e197]:
+                - generic [ref=e198]:
+                  - img [ref=e199]
+                  - searchbox "Search by name" [ref=e202]
+                - tabpanel [ref=e204]:
+                  - generic [ref=e206]:
+                    - heading "User18659" [level=4] [ref=e213]
+                    - generic [ref=e216]:
+                      - img "Andi M1" [ref=e219]
+                      - heading "GG_andi99" [level=4] [ref=e221]
+                    - generic [ref=e224]:
+                      - img "Stefan P2" [ref=e227]
+                      - heading "[FCM] StepHahn90" [level=4] [ref=e229]
+                    - generic [ref=e232]:
+                      - img "Stephan D3" [ref=e235]
+                      - heading "Azunai" [level=4] [ref=e237]
+  - region "Notifications alt+T"
+  - alert [ref=e238]

@@ -1,0 +1,47 @@
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - navigation [ref=e3]:
+      - generic [ref=e5]:
+        - link "Logo Ravensburger Play Hub" [ref=e7] [cursor=pointer]:
+          - /url: /
+          - img "Logo" [ref=e9]
+          - generic [ref=e10]: Ravensburger Play Hub
+        - navigation [ref=e11]:
+          - link "Events" [ref=e12] [cursor=pointer]:
+            - /url: /events
+          - link "Stores" [ref=e13] [cursor=pointer]:
+            - /url: /stores/search
+        - link "Login" [ref=e15] [cursor=pointer]:
+          - /url: /djauth/login
+          - button "Login" [ref=e16]
+    - main [ref=e18]:
+      - generic [ref=e20]:
+        - generic [ref=e22]:
+          - generic [ref=e23]:
+            - heading "Find Our Stores" [level=1] [ref=e24]
+            - generic [ref=e26]: Beta
+          - paragraph [ref=e27]: Enter your zip code or city below to see stores that carry our games near you! If you don't see any results, try adjusting the distance filters and be sure to click 'Search' when you're adjusting search criteria. Your browser will ask to use your location for more precise results.
+        - generic [ref=e29]:
+          - generic [ref=e30]:
+            - generic [ref=e31]: Location
+            - generic [ref=e32]:
+              - generic [ref=e36]:
+                - img [ref=e38]
+                - generic [ref=e41]: Address autocomplete
+                - textbox "Enter a zip code, city, or address" [ref=e42]: Seattle, WA
+              - button "Use my location" [ref=e43] [cursor=pointer]:
+                - img
+          - generic [ref=e44]:
+            - generic [ref=e45]: Distance
+            - combobox "Distance" [ref=e46]:
+              - generic: 25 miles
+              - img
+          - generic [ref=e47]:
+            - generic [ref=e48]: Store Type
+            - combobox "Store Type" [ref=e49]:
+              - generic: Show All
+              - img
+          - button "Search Stores" [active] [ref=e50] [cursor=pointer]
+        - paragraph [ref=e53]: Locating you automatically... or enter a location above and click "Search Stores" to find stores near you.
+  - region "Notifications alt+T"
+  - alert [ref=e54]

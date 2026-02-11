@@ -1,0 +1,15 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e5]:
+    - generic [ref=e6]:
+      - 'heading "404: Page Not Found" [level=1] [ref=e7]'
+      - paragraph [ref=e8]: Sorry, we couldn't find the page you were looking for.
+      - paragraph [ref=e9]: It may have been moved or deleted. Please check the URL or return home.
+    - generic [ref=e10]:
+      - link "CONTACT SUPPORT" [ref=e11] [cursor=pointer]:
+        - /url: https://carde.io/support
+        - button "CONTACT SUPPORT" [ref=e12]
+      - link "BACK TO HOME" [ref=e13] [cursor=pointer]:
+        - /url: /
+        - button "BACK TO HOME" [ref=e14]
+  - region "Notifications alt+T"
+  - alert [ref=e15]

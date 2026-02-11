@@ -1,0 +1,357 @@
+- generic:
+  - generic:
+    - navigation:
+      - generic:
+        - generic:
+          - generic:
+            - link:
+              - /url: /
+              - generic:
+                - img
+              - generic: Ravensburger Play Hub
+          - navigation:
+            - link:
+              - /url: /events
+              - text: Events
+            - link:
+              - /url: /stores/search
+              - text: Stores
+          - generic:
+            - link:
+              - /url: /djauth/login
+              - button: Login
+    - main:
+      - generic:
+        - generic:
+          - generic:
+            - generic:
+              - generic:
+                - heading [level=1]: Find Our Stores
+                - generic:
+                  - generic: Beta
+              - paragraph: Enter your zip code or city below to see stores that carry our games near you! If you don't see any results, try adjusting the distance filters and be sure to click 'Search' when you're adjusting search criteria. Your browser will ask to use your location for more precise results.
+          - generic:
+            - generic:
+              - generic:
+                - generic: Location
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic:
+                        - generic:
+                          - img
+                        - generic: Address autocomplete
+                        - textbox:
+                          - /placeholder: Enter a zip code, city, or address
+                          - text: Seattle, WA, USA
+                  - button:
+                    - img
+              - generic:
+                - generic: Distance
+                - combobox:
+                  - generic: 25 miles
+                  - img
+              - generic:
+                - generic: Store Type
+                - combobox [expanded]:
+                  - generic: Show All
+                  - img
+              - button: Search Stores
+          - generic:
+            - generic:
+              - generic:
+                - generic:
+                  - generic: Stores
+                  - generic: showing 10 of 26 stores
+                - generic:
+                  - generic: Click on map to focus store.
+                  - generic:
+                    - generic:
+                      - generic:
+                        - generic:
+                          - generic:
+                            - generic: Tabletop Village
+                        - generic:
+                          - generic:
+                            - img
+                            - generic: 616 8th Avenue South, Seattle, WA, 98104, US
+                          - generic:
+                            - img
+                            - generic: Physical Retailer / Organized Play
+                        - generic:
+                          - link:
+                            - /url: https://www.tabletopvillage.com/
+                            - text: Store Website
+                            - img
+                          - link:
+                            - /url: /stores/2407b108-1a00-4f28-85ca-c49ca884123a
+                            - button: Store Details
+                    - generic:
+                      - generic:
+                        - generic:
+                          - generic:
+                            - generic: Cardceus
+                        - generic:
+                          - generic:
+                            - img
+                            - generic: 3201, 1st Ave S, Seattle, WA, 98134, US
+                        - generic:
+                          - link:
+                            - /url: https://www.Cardceus.com
+                            - text: Store Website
+                            - img
+                          - link:
+                            - /url: /stores/f03f9890-306f-4d99-a2db-d1205fa6c258
+                            - button: Store Details
+                    - generic:
+                      - generic:
+                        - generic:
+                          - generic:
+                            - generic: Meeples Games
+                        - generic:
+                          - generic:
+                            - img
+                            - generic: 3727 California Avenue Southwest, Seattle, WA, 98116, US
+                          - generic:
+                            - img
+                            - generic: Physical Retailer / Organized Play
+                        - generic:
+                          - link:
+                            - /url: /stores/c488e790-a24c-46cf-aca0-794712f0039a
+                            - button: Store Details
+                    - generic:
+                      - generic:
+                        - generic:
+                          - generic:
+                            - generic: U Wine Bar
+                        - generic:
+                          - generic:
+                            - img
+                            - generic: 4455, Stone Way N, Seattle, WA, 98103, US
+                        - generic:
+                          - link:
+                            - /url: https://uwinebar.com
+                            - text: Store Website
+                            - img
+                          - link:
+                            - /url: /stores/90c726a1-b53a-47ca-b9ec-18f7198f885e
+                            - button: Store Details
+                    - generic:
+                      - generic:
+                        - generic:
+                          - generic:
+                            - generic: Mox Boarding House
+                        - generic:
+                          - generic:
+                            - img
+                            - generic: 5105 Leary Avenue Northwest, Seattle, WA, 98107, US
+                          - generic:
+                            - img
+                            - generic: Physical and Online Retailer / Organized Play
+                        - generic:
+                          - link:
+                            - /url: https://www.moxboardinghouse.com/seattle
+                            - text: Store Website
+                            - img
+                          - link:
+                            - /url: /stores/24d1181b-f5e8-4c40-9bb4-3a941cd6bea9
+                            - button: Store Details
+                    - generic:
+                      - generic:
+                        - generic:
+                          - generic:
+                            - generic: Collector's Corner NW
+                        - generic:
+                          - generic:
+                            - img
+                            - generic: "661 120th Avenue Northeast, Suite #15B, Bellevue, WA, 98005, US"
+                          - generic:
+                            - img
+                            - generic: Physical Retailer / Organized Play
+                        - generic:
+                          - link:
+                            - /url: /stores/12e8b039-ccfb-4cb0-b939-0db7612039a0
+                            - button: Store Details
+                    - generic:
+                      - generic:
+                        - generic:
+                          - generic:
+                            - generic: Mox Boarding House Bellevue
+                        - generic:
+                          - generic:
+                            - img
+                            - generic: 13310 Bel-Red Road, Bellevue, WA, 98005, US
+                          - generic:
+                            - img
+                            - generic: Physical Retailer / Organized Play
+                        - generic:
+                          - link:
+                            - /url: https://www.moxboardinghouse.com
+                            - text: Store Website
+                            - img
+                          - link:
+                            - /url: /stores/2b677594-4681-436b-a491-3b7d6928332b
+                            - button: Store Details
+                    - generic:
+                      - generic:
+                        - generic:
+                          - generic:
+                            - generic: Over the Brick
+                        - generic:
+                          - generic:
+                            - img
+                            - generic: 14150 Juanita Drive Northeast, Kirkland, WA, 98034, US
+                          - generic:
+                            - img
+                            - generic: Physical and Online Retailer / Organized Play
+                        - generic:
+                          - link:
+                            - /url: https://overthebrick.com
+                            - text: Store Website
+                            - img
+                          - link:
+                            - /url: /stores/b65b2736-0b18-4136-940f-8a865280dcb2
+                            - button: Store Details
+                    - generic:
+                      - generic:
+                        - generic:
+                          - generic:
+                            - generic: Shane's Cards
+                        - generic:
+                          - generic:
+                            - img
+                            - generic: 465 Renton Center Way Southwest, Renton, WA, 98057, US
+                          - generic:
+                            - img
+                            - generic: Physical Retailer / Organized Play
+                        - generic:
+                          - link:
+                            - /url: /stores/9d41d61c-a40b-4089-92d9-02c792ffb57a
+                            - button: Store Details
+                    - generic:
+                      - generic:
+                        - generic:
+                          - generic:
+                            - generic: Uncle's Games
+                        - generic:
+                          - generic:
+                            - img
+                            - generic: 7325 166th Avenue Northeast, f150, Redmond, WA, 98052, US
+                          - generic:
+                            - img
+                            - generic: Physical Retailer / Organized Play
+                        - generic:
+                          - link:
+                            - /url: https://www.unclesgames.com/pages/redmond-town-center
+                            - text: Store Website
+                            - img
+                          - link:
+                            - /url: /stores/ed27e8ed-88ea-4749-9d2f-5f47c1218ccf
+                            - button: Store Details
+                - generic:
+                  - generic: Showing 1 - 10 of 26 stores
+                  - navigation:
+                    - list:
+                      - listitem:
+                        - link:
+                          - /url: "#"
+                          - img
+                          - generic: Previous
+                      - listitem:
+                        - link:
+                          - /url: "#"
+                          - text: "1"
+                      - listitem:
+                        - link:
+                          - /url: "#"
+                          - text: "2"
+                      - listitem:
+                        - link:
+                          - /url: "#"
+                          - text: "3"
+                      - listitem:
+                        - link:
+                          - /url: "#"
+                          - generic: Next
+                          - img
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic:
+                        - button "Keyboard shortcuts"
+                      - region
+                      - generic:
+                        - generic:
+                          - generic:
+                            - generic:
+                              - generic:
+                                - button
+                                - button
+                                - button
+                                - button
+                                - button
+                                - button
+                                - button
+                                - button
+                                - button
+                                - button
+                        - iframe [ref=e55]:
+                          
+                        - generic:
+                          - generic:
+                            - generic:
+                              - button "Map camera controls"
+                            - generic:
+                              - generic:
+                                - button "Zoom in"
+                                - button "Zoom out"
+                        - generic:
+                          - generic:
+                            - link "Open this area in Google Maps (opens a new window)":
+                              - /url: https://maps.google.com/maps?ll=47.618392,-122.269185&z=11&t=m&hl=en&gl=US&mapclient=apiv3
+                              - generic:
+                                - img "Google"
+                        - generic:
+                          - generic:
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - button "Keyboard shortcuts"
+                            - generic:
+                              - generic:
+                                - generic: Map data ©2026 Google
+                            - generic:
+                              - generic:
+                                - link "Terms (opens in new tab)":
+                                  - /url: https://www.google.com/intl/en_US/help/terms_maps.html
+                                  - text: Terms
+                            - generic:
+                              - generic:
+                                - link "Report a map error":
+                                  - /url: https://www.google.com/maps/@47.6183925,-122.2691845,11z/data=!10m1!1e1!12b1?source=apiv3&rapsrc=apiv3
+                    - generic:
+                      - heading [level=4]: Store Types
+                      - generic:
+                        - generic: Organized Play + Retail
+                      - generic:
+                        - generic: Retail Only
+                      - generic:
+                        - generic: Unknown
+  - region "Notifications alt+T"
+  - alert
+  - listbox [ref=e56]:
+    - option "Show All" [active] [selected] [ref=e57]:
+      - generic [ref=e59]:
+        - img
+      - generic [ref=e60]: Show All
+    - option "Physical Retailer" [ref=e61]:
+      - generic [ref=e63]: Physical Retailer
+    - option "Online Retailer" [ref=e64]:
+      - generic [ref=e66]: Online Retailer
+    - option "Physical and Online Retailer" [ref=e67]:
+      - generic [ref=e69]: Physical and Online Retailer
+    - option "Organized Play" [ref=e70]:
+      - generic [ref=e72]: Organized Play
+    - option "Partner" [ref=e73]:
+      - generic [ref=e75]: Partner
