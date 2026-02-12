@@ -30,6 +30,19 @@ registerEventTools(server);
 registerStoreTools(server);
 registerFilterTools(server);
 
+async function loadFiltersWithRetry(attempts = 3, delayMs = 2000): Promise<void> {
+  for (let i = 1; i <= attempts; i++) {
+    try {
+      await loadFilterOptions();
+      return;
+    } catch (err) {
+      console.error(`Filter options load attempt ${i}/${attempts} failed:`, err);
+      if (i < attempts) await new Promise(r => setTimeout(r, delayMs));
+    }
+  }
+  console.error("All filter loading attempts failed; tools will use strict name matching only");
+}
+
 async function main() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
@@ -37,7 +50,7 @@ async function main() {
 
   // Load format/category maps in background so we don't block the MCP handshake
   // (Cursor and other clients time out if the server doesn't respond to initialize quickly)
-  loadFilterOptions().catch((err) => console.error("Failed to load filter options:", err));
+  loadFiltersWithRetry();
 }
 
 if (isEntryModule()) {

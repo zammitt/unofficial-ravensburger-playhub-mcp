@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-const REQUIRED_MAJOR = 20;
+const REQUIRED_MAJOR = 25;
 const major = Number.parseInt(process.versions.node.split(".")[0], 10);
 
 if (major !== REQUIRED_MAJOR) {

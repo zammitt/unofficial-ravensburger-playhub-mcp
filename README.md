@@ -4,7 +4,7 @@ An **MCP (Model Context Protocol) server** that lets AI assistants look up **Dis
 
 ## What you need
 
-- **Node.js** 20.x (development/tests are pinned to Node 20 via `.nvmrc`)
+- **Node.js** 25.x (development/tests are pinned to Node 25 via `.nvmrc`)
 - **npm** (comes with Node)
 
 Tip: run `nvm use` in this repo to load the pinned Node version.
