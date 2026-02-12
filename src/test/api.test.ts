@@ -25,8 +25,6 @@ import {
   geocodePlaceId,
   searchCardsQuick,
   fetchGames,
-  clearCaches,
-  getCacheStats,
 } from "../lib/api.js";
 import type { GameplayFormat, EventCategory } from "../lib/types.js";
 
@@ -299,7 +297,6 @@ describe("api – fetch with mocked global fetch", () => {
   });
 
   it("fetchEventDetails returns event on ok", async () => {
-    clearCaches();
     const event = { id: 1, name: "Test Event", start_datetime: "2025-01-01T12:00:00Z" };
     globalThis.fetch = async (_input: RequestInfo | URL) =>
       new Response(JSON.stringify(event), { status: 200 });
@@ -348,7 +345,7 @@ describe("api – fetch with mocked global fetch", () => {
   it("fetchTournamentRoundStandings throws on non-ok", async () => {
     globalThis.fetch = async (_input: RequestInfo | URL) => new Response("error", { status: 500 });
     await assert.rejects(
-      () => fetchTournamentRoundStandings(100),
+      () => fetchTournamentRoundStandings(101),
       /API request failed/
     );
   });
@@ -383,7 +380,7 @@ describe("api – fetch with mocked global fetch", () => {
       }
       return new Response("error", { status: 404 });
     };
-    const result = await fetchTournamentRoundStandings(100, 1, 25);
+    const result = await fetchTournamentRoundStandings(102, 1, 25);
     assert.strictEqual(result.total, 2);
     assert.strictEqual(result.results.length, 2);
     assert.strictEqual(result.results[0].player_name, "Alice");
@@ -480,118 +477,3 @@ describe("api – loadFilterOptions", () => {
   });
 });
 
-describe("api – completed event cache", () => {
-  let originalFetch: typeof globalThis.fetch;
-
-  beforeEach(() => {
-    originalFetch = globalThis.fetch;
-    clearCaches();
-  });
-
-  afterEach(() => {
-    globalThis.fetch = originalFetch;
-  });
-
-  it("fetchEventDetails caches past events and returns cache on second call", async () => {
-    const pastEvent = {
-      id: 42,
-      name: "Past Championship",
-      start_datetime: "2025-01-01T12:00:00Z",
-      display_status: "past",
-    };
-    let fetchCallCount = 0;
-    globalThis.fetch = async (_input: RequestInfo | URL) => {
-      fetchCallCount++;
-      return new Response(JSON.stringify(pastEvent), { status: 200 });
-    };
-    const first = await fetchEventDetails(42);
-    assert.strictEqual(first.id, 42);
-    assert.strictEqual(fetchCallCount, 1);
-    const second = await fetchEventDetails(42);
-    assert.strictEqual(second.id, 42);
-    assert.strictEqual(fetchCallCount, 1, "second call should hit cache");
-  });
-
-  it("fetchEventDetails does not cache upcoming events", async () => {
-    const upcomingEvent = {
-      id: 99,
-      name: "Upcoming Event",
-      start_datetime: "2026-06-01T12:00:00Z",
-      display_status: "upcoming",
-    };
-    let fetchCallCount = 0;
-    globalThis.fetch = async (_input: RequestInfo | URL) => {
-      fetchCallCount++;
-      return new Response(JSON.stringify(upcomingEvent), { status: 200 });
-    };
-    await fetchEventDetails(99);
-    await fetchEventDetails(99);
-    assert.strictEqual(fetchCallCount, 2, "upcoming events should not be cached");
-  });
-
-  it("getCacheStats returns sizes for event and round standings caches", async () => {
-    assert.deepStrictEqual(getCacheStats(), { eventCacheSize: 0, roundStandingsCacheSize: 0 });
-    const pastEvent = { id: 1, name: "E", start_datetime: "2025-01-01Z", display_status: "past" };
-    globalThis.fetch = async (_input: RequestInfo | URL) =>
-      new Response(JSON.stringify(pastEvent), { status: 200 });
-    await fetchEventDetails(1);
-    assert.strictEqual(getCacheStats().eventCacheSize, 1);
-    assert.strictEqual(getCacheStats().roundStandingsCacheSize, 0);
-  });
-
-  it("clearCaches clears both caches", async () => {
-    const pastEvent = { id: 1, name: "E", start_datetime: "2025-01-01Z", display_status: "past" };
-    globalThis.fetch = async (_input: RequestInfo | URL) =>
-      new Response(JSON.stringify(pastEvent), { status: 200 });
-    await fetchEventDetails(1);
-    assert.strictEqual(getCacheStats().eventCacheSize, 1);
-    clearCaches();
-    assert.deepStrictEqual(getCacheStats(), { eventCacheSize: 0, roundStandingsCacheSize: 0 });
-  });
-
-  it("fetchAllRoundStandings with isPastEvent caches and returns cache on second call", async () => {
-    const standingsPage = {
-      count: 2,
-      total: 2,
-      page_size: 100,
-      current_page_number: 1,
-      next_page_number: null,
-      previous_page_number: null,
-      results: [
-        { rank: 1, player_name: "Alice", wins: 3, losses: 0 },
-        { rank: 2, player_name: "Bob", wins: 2, losses: 1 },
-      ],
-    };
-    let fetchCallCount = 0;
-    globalThis.fetch = async (_input: RequestInfo | URL) => {
-      fetchCallCount++;
-      return new Response(JSON.stringify(standingsPage), { status: 200 });
-    };
-    const first = await fetchAllRoundStandings(100, true);
-    assert.strictEqual(first.length, 2);
-    assert.strictEqual(fetchCallCount, 1);
-    const second = await fetchAllRoundStandings(100, true);
-    assert.strictEqual(second.length, 2);
-    assert.strictEqual(fetchCallCount, 1, "second call should hit cache");
-  });
-
-  it("fetchAllRoundStandings with isPastEvent false does not cache", async () => {
-    const standingsPage = {
-      count: 1,
-      total: 1,
-      page_size: 100,
-      current_page_number: 1,
-      next_page_number: null,
-      previous_page_number: null,
-      results: [{ rank: 1, player_name: "X", wins: 1, losses: 0 }],
-    };
-    let fetchCallCount = 0;
-    globalThis.fetch = async (_input: RequestInfo | URL) => {
-      fetchCallCount++;
-      return new Response(JSON.stringify(standingsPage), { status: 200 });
-    };
-    await fetchAllRoundStandings(200, false);
-    await fetchAllRoundStandings(200, false);
-    assert.strictEqual(fetchCallCount, 2, "isPastEvent false should not cache");
-  });
-});

@@ -9,8 +9,6 @@ const playhubApi = require("unofficial-ravensburger-playhub-api") as typeof impo
 
 export const STATUSES = playhubApi.STATUSES;
 export const expandStatusesForApi = playhubApi.expandStatusesForApi;
-export const clearCaches = playhubApi.clearCaches;
-export const getCacheStats = playhubApi.getCacheStats;
 export const loadFilterOptions = playhubApi.loadFilterOptions;
 export const updateFilterMaps = playhubApi.updateFilterMaps;
 export const fetchGameplayFormats = playhubApi.fetchGameplayFormats;
