@@ -187,6 +187,14 @@ describe("api – fetch with mocked global fetch", () => {
     assert.deepStrictEqual(result, data);
   });
 
+  it("fetchGames unwraps paginated results on ok response", async () => {
+    const data = [{ id: 1, slug: "disney-lorcana", name: "Disney Lorcana" }];
+    globalThis.fetch = async (_input: RequestInfo | URL) =>
+      new Response(JSON.stringify({ count: 1, total: 1, results: data }), { status: 200 });
+    const result = await fetchGames();
+    assert.deepStrictEqual(result, data);
+  });
+
   it("geocodeAddress returns parsed data payload", async () => {
     const data = {
       data: {
@@ -476,4 +484,3 @@ describe("api – loadFilterOptions", () => {
     await assert.doesNotReject(loadFilterOptions());
   });
 });
-

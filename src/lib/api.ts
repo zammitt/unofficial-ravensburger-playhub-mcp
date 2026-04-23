@@ -3,9 +3,27 @@
  */
 
 import { createRequire } from "node:module";
+import type { GameSummary } from "unofficial-ravensburger-playhub-api";
 
 const require = createRequire(import.meta.url);
 const playhubApi = require("unofficial-ravensburger-playhub-api") as typeof import("unofficial-ravensburger-playhub-api");
+
+function normalizeGamesResponse(response: unknown): GameSummary[] {
+  if (Array.isArray(response)) {
+    return response as GameSummary[];
+  }
+
+  if (
+    response &&
+    typeof response === "object" &&
+    "results" in response &&
+    Array.isArray((response as { results?: unknown }).results)
+  ) {
+    return (response as { results: GameSummary[] }).results;
+  }
+
+  throw new Error("Unexpected games response shape");
+}
 
 export const STATUSES = playhubApi.STATUSES;
 export const expandStatusesForApi = playhubApi.expandStatusesForApi;
@@ -21,7 +39,10 @@ export const fetchTournamentRoundStandings = playhubApi.fetchTournamentRoundStan
 export const fetchTournamentRoundMatches = playhubApi.fetchTournamentRoundMatches;
 export const fetchStores = playhubApi.fetchStores;
 export const fetchStoreDetails = playhubApi.fetchStoreDetails;
-export const fetchGames = playhubApi.fetchGames;
+export async function fetchGames(): Promise<GameSummary[]> {
+  const response = await playhubApi.fetchGames() as unknown;
+  return normalizeGamesResponse(response);
+}
 export const fetchGameDetails = playhubApi.fetchGameDetails;
 export const geocodeAddress = playhubApi.geocodeAddress;
 export const geocodePlaceId = playhubApi.geocodePlaceId;
